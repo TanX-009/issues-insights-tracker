@@ -1,19 +1,14 @@
-import type { TApiResponse } from "$lib/api/config";
-import { json } from "@sveltejs/kit";
+import type { TApiResponse, TErrorResponse } from "$lib/api/config";
 
-export default async function handleResponse<TResponse>(
+export default function handleResponse<TResponse>(
   response: TApiResponse<TResponse>,
-  onSuccess?: (res: TResponse) => void | Promise<void>,
-) {
-  if (!response.success && response.status === 401) {
-    return json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+  onSuccess: (res: TResponse) => void,
+  onError: (err: TErrorResponse) => void,
+): number {
   if (!response.success) {
-    return json({ error: response.error }, { status: response.status });
+    onError(response.error);
   }
 
-  if (onSuccess) await onSuccess(response.data);
-
-  return json(response.data);
+  if (response.success) onSuccess(response.data);
+  return response.status;
 }

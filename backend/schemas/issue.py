@@ -2,6 +2,8 @@ from pydantic import BaseModel
 from enum import Enum
 from typing import Optional
 
+from models.user import UserOut
+
 
 class Severity(str, Enum):
     LOW = "LOW"
@@ -28,8 +30,10 @@ class IssueCreate(IssueBase):
 
 
 class IssueUpdate(BaseModel):
-    status: Optional[Status]
-    severity: Optional[Severity]
+    title: Optional[str] = None
+    description: Optional[str] = None
+    status: Optional[Status] = None
+    severity: Optional[Severity] = None
 
 
 class IssueOut(IssueBase):
@@ -37,7 +41,7 @@ class IssueOut(IssueBase):
     status: Status
     severity: Severity = Severity.LOW
     file_path: Optional[str]
-    reporter_id: int
+    reporter: UserOut
 
     class Config:
-        orm_mode = True
+        from_attributes = True

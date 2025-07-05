@@ -1,1 +1,229 @@
-@import 'tailwindcss';
+@import "tailwindcss";
+
+@layer base {
+  error {
+    @apply px-3 py-1 text-error bg-errorContainer rounded;
+  }
+
+  input,
+  textarea,
+  select {
+    @apply p-2 rounded bg-surfaceContainerHigh text-onSurface;
+  }
+
+  button,
+  .button {
+    @apply py-1.5 px-4 max-w-fit rounded bg-primary text-onPrimary cursor-pointer;
+    &.med {
+      @apply text-primary bg-primaryContainer;
+    }
+    &.low {
+      @apply text-onSurface bg-surfaceContainerHighest;
+    }
+    &.error {
+      @apply text-error bg-errorContainer;
+    }
+  }
+}
+
+@theme {
+  --color-sourceColor: var(--sourceColor);
+  --color-primary: var(--primary);
+  --color-primaryFixed: var(--primaryFixed);
+  --color-primaryFixedDim: var(--primaryFixedDim);
+  --color-onPrimary: var(--onPrimary);
+  --color-onPrimaryFixed: var(--onPrimaryFixed);
+  --color-onPrimaryFixedVariant: var(--onPrimaryFixedVariant);
+  --color-primaryContainer: var(--primaryContainer);
+  --color-onPrimaryContainer: var(--onPrimaryContainer);
+  --color-secondary: var(--secondary);
+  --color-secondaryFixed: var(--secondaryFixed);
+  --color-secondaryFixedDim: var(--secondaryFixedDim);
+  --color-onSecondary: var(--onSecondary);
+  --color-onSecondaryFixed: var(--onSecondaryFixed);
+  --color-onSecondaryFixedVariant: var(--onSecondaryFixedVariant);
+  --color-secondaryContainer: var(--secondaryContainer);
+  --color-onSecondaryContainer: var(--onSecondaryContainer);
+  --color-tertiary: var(--tertiary);
+  --color-tertiaryFixed: var(--tertiaryFixed);
+  --color-tertiaryFixedDim: var(--tertiaryFixedDim);
+  --color-onTertiary: var(--onTertiary);
+  --color-onTertiaryFixed: var(--onTertiaryFixed);
+  --color-onTertiaryFixedVariant: var(--onTertiaryFixedVariant);
+  --color-tertiaryContainer: var(--tertiaryContainer);
+  --color-onTertiaryContainer: var(--onTertiaryContainer);
+  --color-error: var(--error);
+  --color-onError: var(--onError);
+  --color-errorContainer: var(--errorContainer);
+  --color-onErrorContainer: var(--onErrorContainer);
+  --color-surface: var(--surface);
+  --color-onSurface: var(--onSurface);
+  --color-onSurfaceVariant: var(--onSurfaceVariant);
+  --color-outline: var(--outline);
+  --color-outlineVariant: var(--outlineVariant);
+  --color-shadow: var(--shadow);
+  --color-scrim: var(--scrim);
+  --color-inverseSurface: var(--inverseSurface);
+  --color-inverseOnSurface: var(--inverseOnSurface);
+  --color-inversePrimary: var(--inversePrimary);
+  --color-surfaceDim: var(--surfaceDim);
+  --color-surfaceBright: var(--surfaceBright);
+  --color-surfaceContainerLowest: var(--surfaceContainerLowest);
+  --color-surfaceContainerLow: var(--surfaceContainerLow);
+  --color-surfaceContainer: var(--surfaceContainer);
+  --color-surfaceContainerHigh: var(--surfaceContainerHigh);
+  --color-surfaceContainerHighest: var(--surfaceContainerHighest);
+}
+/* Auto-generated Material Theme */
+:root {
+  --sourceColor: #f7c74d;
+  --primary: #775a00;
+  --primaryFixed: #ffdf98;
+  --primaryFixedDim: #f0c047;
+  --onPrimary: #ffffff;
+  --onPrimaryFixed: #251a00;
+  --onPrimaryFixedVariant: #5a4300;
+  --primaryContainer: #ffdf98;
+  --onPrimaryContainer: #251a00;
+  --secondary: #6a5d3f;
+  --secondaryFixed: #f4e0bb;
+  --secondaryFixedDim: #d7c5a0;
+  --onSecondary: #ffffff;
+  --onSecondaryFixed: #241a04;
+  --onSecondaryFixedVariant: #52452a;
+  --secondaryContainer: #f4e0bb;
+  --onSecondaryContainer: #241a04;
+  --tertiary: #496548;
+  --tertiaryFixed: #cbebc6;
+  --tertiaryFixedDim: #afcfab;
+  --onTertiary: #ffffff;
+  --onTertiaryFixed: #06210a;
+  --onTertiaryFixedVariant: #324d32;
+  --tertiaryContainer: #cbebc6;
+  --onTertiaryContainer: #06210a;
+  --error: #ba1a1a;
+  --onError: #ffffff;
+  --errorContainer: #ffdad6;
+  --onErrorContainer: #410002;
+  --surface: #fff8f2;
+  --onSurface: #1e1b16;
+  --onSurfaceVariant: #4d4639;
+  --outline: #7e7667;
+  --outlineVariant: #d0c5b4;
+  --shadow: #000000;
+  --scrim: #000000;
+  --inverseSurface: #33302a;
+  --inverseOnSurface: #f7f0e7;
+  --inversePrimary: #f0c047;
+  --surfaceDim: #e0d9d0;
+  --surfaceBright: #fff8f2;
+  --surfaceContainerLowest: #ffffff;
+  --surfaceContainerLow: #faf2e9;
+  --surfaceContainer: #f4ede4;
+  --surfaceContainerHigh: #efe7de;
+  --surfaceContainerHighest: #e9e1d9;
+}
+
+/* Dark theme */
+@media (prefers-color-scheme: dark) {
+  :root,
+  [data-theme="dark"] {
+    --primary: #f0c047;
+    --primaryFixed: #ffdf98;
+    --primaryFixedDim: #f0c047;
+    --onPrimary: #3f2e00;
+    --onPrimaryFixed: #251a00;
+    --onPrimaryFixedVariant: #5a4300;
+    --primaryContainer: #5a4300;
+    --onPrimaryContainer: #ffdf98;
+    --secondary: #d7c5a0;
+    --secondaryFixed: #f4e0bb;
+    --secondaryFixedDim: #d7c5a0;
+    --onSecondary: #3a2f15;
+    --onSecondaryFixed: #241a04;
+    --onSecondaryFixedVariant: #52452a;
+    --secondaryContainer: #52452a;
+    --onSecondaryContainer: #f4e0bb;
+    --tertiary: #afcfab;
+    --tertiaryFixed: #cbebc6;
+    --tertiaryFixedDim: #afcfab;
+    --onTertiary: #1c361d;
+    --onTertiaryFixed: #06210a;
+    --onTertiaryFixedVariant: #324d32;
+    --tertiaryContainer: #324d32;
+    --onTertiaryContainer: #cbebc6;
+    --error: #ffb4ab;
+    --onError: #690005;
+    --errorContainer: #93000a;
+    --onErrorContainer: #ffb4ab;
+    --surface: #16130e;
+    --onSurface: #e9e1d9;
+    --onSurfaceVariant: #d0c5b4;
+    --outline: #999080;
+    --outlineVariant: #4d4639;
+    --shadow: #000000;
+    --scrim: #000000;
+    --inverseSurface: #e9e1d9;
+    --inverseOnSurface: #33302a;
+    --inversePrimary: #775a00;
+    --surfaceDim: #16130e;
+    --surfaceBright: #3c3933;
+    --surfaceContainerLowest: #100e09;
+    --surfaceContainerLow: #1e1b16;
+    --surfaceContainer: #221f1a;
+    --surfaceContainerHigh: #2d2a24;
+    --surfaceContainerHighest: #38342e;
+  }
+}
+
+/* Light theme */
+@media (prefers-color-scheme: light) {
+  :root,
+  [data-theme="light"] {
+    --primary: #775a00;
+    --primaryFixed: #ffdf98;
+    --primaryFixedDim: #f0c047;
+    --onPrimary: #ffffff;
+    --onPrimaryFixed: #251a00;
+    --onPrimaryFixedVariant: #5a4300;
+    --primaryContainer: #ffdf98;
+    --onPrimaryContainer: #251a00;
+    --secondary: #6a5d3f;
+    --secondaryFixed: #f4e0bb;
+    --secondaryFixedDim: #d7c5a0;
+    --onSecondary: #ffffff;
+    --onSecondaryFixed: #241a04;
+    --onSecondaryFixedVariant: #52452a;
+    --secondaryContainer: #f4e0bb;
+    --onSecondaryContainer: #241a04;
+    --tertiary: #496548;
+    --tertiaryFixed: #cbebc6;
+    --tertiaryFixedDim: #afcfab;
+    --onTertiary: #ffffff;
+    --onTertiaryFixed: #06210a;
+    --onTertiaryFixedVariant: #324d32;
+    --tertiaryContainer: #cbebc6;
+    --onTertiaryContainer: #06210a;
+    --error: #ba1a1a;
+    --onError: #ffffff;
+    --errorContainer: #ffdad6;
+    --onErrorContainer: #410002;
+    --surface: #fff8f2;
+    --onSurface: #1e1b16;
+    --onSurfaceVariant: #4d4639;
+    --outline: #7e7667;
+    --outlineVariant: #d0c5b4;
+    --shadow: #000000;
+    --scrim: #000000;
+    --inverseSurface: #33302a;
+    --inverseOnSurface: #f7f0e7;
+    --inversePrimary: #f0c047;
+    --surfaceDim: #e0d9d0;
+    --surfaceBright: #fff8f2;
+    --surfaceContainerLowest: #ffffff;
+    --surfaceContainerLow: #faf2e9;
+    --surfaceContainer: #f4ede4;
+    --surfaceContainerHigh: #efe7de;
+    --surfaceContainerHighest: #e9e1d9;
+  }
+}

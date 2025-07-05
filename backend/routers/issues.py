@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, status
+from sqlalchemy.orm import Session, joinedload
 from monitoring.metrics import ISSUES_CREATED, REQUEST_TIME
 from db import get_db
 from models.issue import Issue, Severity
@@ -22,7 +22,6 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 def create_issue(
     title: str = Form(...),
     description: str = Form(...),
-    severity: Severity = Form(...),
     file: UploadFile = File(None),
     db: Session = Depends(get_db),
     user=Depends(require_role(["REPORTER", "MAINTAINER", "ADMIN"])),
@@ -36,7 +35,7 @@ def create_issue(
     issue = Issue(
         title=title,
         description=description,
-        severity=severity,
+        severity=Severity.LOW,  # 👈 Always default to LOW
         file_path=file_path,
         reporter_id=user.id,
     )
@@ -49,7 +48,7 @@ def create_issue(
             "event": "issue_created",
             "user_id": user.id,
             "issue_id": issue.id,
-            "severity": severity.value,
+            "severity": "LOW",
             "file_uploaded": bool(file),
         }
     )
@@ -64,9 +63,11 @@ def list_issues(db: Session = Depends(get_db), user=Depends(get_current_user)):
         {"event": "issue_list_requested", "user_id": user.id, "role": user.role.value}
     )
 
+    query = db.query(Issue).options(joinedload(Issue.reporter))
+
     if user.role.value == UserRole.REPORTER.value:
-        return db.query(Issue).filter(Issue.reporter_id == user.id).all()
-    return db.query(Issue).all()
+        return query.filter(Issue.reporter_id == user.id).all()
+    return query.all()
 
 
 @router.get("/{issue_id}", response_model=IssueOut)
@@ -100,7 +101,7 @@ def update_issue(
     issue_id: int,
     payload: IssueUpdate,
     db: Session = Depends(get_db),
-    user=Depends(require_role(["MAINTAINER", "ADMIN"])),
+    user=Depends(get_current_user),
 ):
     issue = db.query(Issue).get(issue_id)
     if not issue:
@@ -111,11 +112,45 @@ def update_issue(
                 "user_id": user.id,
             }
         )
-        raise HTTPException(404)
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
 
-    if payload.status:
+    # Allow all users to update title/description
+    if payload.title is not None:
+        issue.title = payload.title
+    if payload.description is not None:
+        issue.description = payload.description
+
+    # Only MAINTAINER and ADMIN can update status/severity
+    if payload.status is not None:
+        if user.role not in ("MAINTAINER", "ADMIN"):
+            logger.info(
+                {
+                    "event": "issue_update_forbidden_status",
+                    "issue_id": issue_id,
+                    "user_id": user.id,
+                    "role": user.role,
+                }
+            )
+            # raise HTTPException(
+            #     status.HTTP_403_FORBIDDEN,
+            #     detail="Insufficient permissions to update status.",
+            # )
         issue.status = payload.status
-    if payload.severity:
+
+    if payload.severity is not None:
+        if user.role not in ("MAINTAINER", "ADMIN"):
+            logger.info(
+                {
+                    "event": "issue_update_forbidden_severity",
+                    "issue_id": issue_id,
+                    "user_id": user.id,
+                    "role": user.role,
+                }
+            )
+            # raise HTTPException(
+            #     status.HTTP_403_FORBIDDEN,
+            #     detail="Insufficient permissions to update severity.",
+            # )
         issue.severity = payload.severity
 
     db.commit()

@@ -26,7 +26,7 @@ const instance = axios.create({
   timeout: 300000,
   headers: {
     Accept: "application/json",
-    "content-type": "application/json",
+    "Content-Type": "application/json",
   },
 });
 
@@ -125,9 +125,17 @@ async function requestFailureCallback<TResponse>(
     };
   }
 
-  // if (error.response.status === 401) {
-  //   return await handle401Error<TResponse>(originalRequest);
-  // }
+  if (error.response.status === 401) {
+    return {
+      success: false,
+      status: 401,
+      error: {
+        detail: "Token expired!",
+        data: error.response.data,
+      },
+    };
+    // return await handle401Error<TResponse>(originalRequest);
+  }
 
   // other error by server
   return {
@@ -192,6 +200,7 @@ async function put<TRequest, TResponse, TRequestParams>(
       withCredentials: options?.withCredentials ?? false,
       headers: {
         "Content-Type": options.contentType,
+        Authorization: options.Authorization,
       },
     });
     return { success: true, status: 200, data: response.data };

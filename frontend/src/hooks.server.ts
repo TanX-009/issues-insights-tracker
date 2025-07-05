@@ -1,23 +1,30 @@
 import { redirect } from "@sveltejs/kit";
 import type { Handle } from "@sveltejs/kit";
 
-const PROTECTED_ROUTES = ["/issues"]; // secured pages
+const EXACT_PROTECTED_ROUTES = ["/"]; // strictly equal to
+const PREFIX_PROTECTED_ROUTES = ["/issues", "/logout"]; // startsWith
 
 export const handle: Handle = async ({ event, resolve }) => {
   const token = event.cookies.get("auth_token");
+  const user = event.cookies.get("auth");
   const pathname = event.url.pathname;
 
-  // Set token on locals for later use
-  event.locals.token = token;
+  const isProtected =
+    EXACT_PROTECTED_ROUTES.includes(pathname) ||
+    PREFIX_PROTECTED_ROUTES.some((r) => pathname.startsWith(r));
 
   // Redirect unauthenticated access to protected routes
-  if (!token && PROTECTED_ROUTES.some((r) => pathname.startsWith(r))) {
+  if (!token && isProtected) {
     throw redirect(303, "/login");
   }
 
+  // Set token and user on locals
+  if (token) event.locals.token = token;
+  if (user) event.locals.user = JSON.parse(user);
+
   // Redirect authenticated users away from login
   if (token && pathname === "/login") {
-    throw redirect(303, "/"); // or homepage, dashboard etc.
+    throw redirect(303, "/");
   }
 
   return resolve(event);

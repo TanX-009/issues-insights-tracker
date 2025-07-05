@@ -1,8 +1,19 @@
 import { json, type RequestHandler } from "@sveltejs/kit";
-import { get } from "$lib/api/config";
+import { delete_, get, post, put } from "$lib/api/config";
 import Urls from "$lib/api/urls";
-import type { TIssue } from "$lib/types/issue"; // adjust the path and name based on your actual type
-import handleResponse from "$lib/utils/response";
+import type { TIssue } from "$lib/types/issue";
+
+interface TCreateIssueRequest {
+  title: string;
+  description: string;
+}
+
+interface TUpdateIssueRequest {
+  title: string;
+  description: string;
+  severity: TIssue["severity"];
+  status: TIssue["status"];
+}
 
 export const GET: RequestHandler = async ({ locals }) => {
   const token = locals.token;
@@ -15,5 +26,70 @@ export const GET: RequestHandler = async ({ locals }) => {
     Authorization: `Bearer ${token}`,
   });
 
-  return handleResponse(response);
+  return json(response);
+};
+
+export const POST: RequestHandler = async ({ request, locals }) => {
+  const { title, description } = await request.json();
+  const token = locals.token;
+
+  if (!token) {
+    return json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const response = await post<TCreateIssueRequest, TIssue, "">(
+    Urls.createIssue,
+    {
+      title,
+      description,
+    },
+    {
+      contentType: "application/x-www-form-urlencoded",
+      Authorization: `Bearer ${token}`,
+    },
+  );
+
+  return json(response);
+};
+
+export const PUT: RequestHandler = async ({ request, locals }) => {
+  const { title, description, severity, status, id } = await request.json();
+  const token = locals.token;
+
+  if (!token) {
+    return json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const response = await put<TUpdateIssueRequest, TIssue, "">(
+    Urls.updateIssue.replace("$$issue_id$$", id),
+    {
+      title,
+      description,
+      severity,
+      status,
+    },
+    {
+      Authorization: `Bearer ${token}`,
+    },
+  );
+
+  return json(response);
+};
+
+export const DELETE: RequestHandler = async ({ request, locals }) => {
+  const { id } = await request.json();
+  const token = locals.token;
+
+  if (!token) {
+    return json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const response = await delete_<string, string>(
+    Urls.deleteIssue.replace("$$issue_id$$", id),
+    {
+      Authorization: `Bearer ${token}`,
+    },
+  );
+
+  return json(response);
 };

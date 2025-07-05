@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from db import get_db
-from models.user import User, UserRole
+from models.user import User, UserOut, UserRole
 from core.security import hash_password, verify_password
 from core.jwt import create_access_token
 from core.logging import logger
@@ -16,9 +16,11 @@ class AuthRequest(BaseModel):
     password: str
 
 
+# --- New: AuthResponse Model ---
 class AuthResponse(BaseModel):
     access_token: str
-    token_type: str = "bearer"
+    token_type: str
+    user: UserOut  # Include the UserOut model
 
 
 @router.post("/signup", response_model=AuthResponse)
@@ -49,7 +51,11 @@ def signup(auth: AuthRequest, db: Session = Depends(get_db)):
     )
 
     token = create_access_token({"sub": new_user.email, "role": new_user.role.value})
-    return {"access_token": token}
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user": UserOut.model_validate(new_user),
+    }
 
 
 @router.post("/login", response_model=AuthResponse)
@@ -73,4 +79,8 @@ def login(
     )
 
     token = create_access_token({"sub": user.email, "role": user.role.value})
-    return {"access_token": token, "token_type": "bearer"}
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user": UserOut.model_validate(user),
+    }

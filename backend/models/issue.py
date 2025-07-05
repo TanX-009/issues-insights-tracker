@@ -30,10 +30,12 @@ class Issue(Base):
     severity = Column(Enum(Severity), default=Severity.LOW, nullable=False)
     status = Column(Enum(Status), default=Status.OPEN, nullable=False)
 
-    reporter_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    reporter = relationship("User", backref="issues")
+    reporter_id = Column(Integer, ForeignKey("users.id"))
+    reporter = relationship("User", back_populates="issues_reported")
 
     created_at = Column(DateTime, default=datetime.now(timezone.utc))
     updated_at = Column(
-        DateTime, default=datetime.now(timezone.utc), onupdate=datetime.utcnow
+        DateTime,
+        default=datetime.now(timezone.utc),
+        onupdate=datetime.now(timezone.utc),
     )
