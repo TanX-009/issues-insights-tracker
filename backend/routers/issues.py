@@ -159,7 +159,7 @@ def get_issue(
 
 
 @router.put("/{issue_id}", response_model=IssueOut)
-def update_issue(
+async def update_issue(
     issue_id: int,
     payload: IssueUpdate,
     db: Session = Depends(get_db),
@@ -227,11 +227,20 @@ def update_issue(
         }
     )
 
+    # --- SSE: Notify connected clients ---
+    for client_queue in connected_clients:
+        try:
+            # Put the issue data into each client's queue
+            await client_queue.put(f"Issue updated: {issue.title} (id={issue.id})")
+        except Exception as e:
+            logger.error(f"Failed to send SSE message to client: {e}")
+    # --- End SSE notification ---
+
     return issue
 
 
 @router.delete("/{issue_id}")
-def delete_issue(
+async def delete_issue(
     issue_id: int, db: Session = Depends(get_db), user=Depends(require_role(["ADMIN"]))
 ):
     issue = db.query(Issue).get(issue_id)
@@ -249,5 +258,14 @@ def delete_issue(
     db.commit()
 
     logger.info({"event": "issue_deleted", "issue_id": issue_id, "user_id": user.id})
+
+    # --- SSE: Notify connected clients ---
+    for client_queue in connected_clients:
+        try:
+            # Put the issue data into each client's queue
+            await client_queue.put(f"Issue deleted: {issue.title} (id={issue.id})")
+        except Exception as e:
+            logger.error(f"Failed to send SSE message to client: {e}")
+    # --- End SSE notification ---
 
     return {"detail": "Deleted"}
