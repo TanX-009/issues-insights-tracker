@@ -31,7 +31,7 @@
     <h1 class="text-2xl">Login</h1>
     <input bind:value={email} placeholder="Email" />
     <input type="password" bind:value={password} placeholder="Password" />
-    {#if message}<error>{message}</error>{/if}
+    {#if message}<div class="error">{message}</div>{/if}
     <button type="submit">Login</button>
   </form>
 </div>

@@ -20,7 +20,7 @@
   let modalEl: Modal;
   export const open = (issue: TIssue) => {
     title = issue.title;
-    description = issue.title;
+    description = issue.description;
     status = issue.status;
     severity = issue.severity;
     id = issue.id;
@@ -179,6 +179,6 @@
     </form>
   {/if}
   {#if error}
-    <error class="">{error}</error>
+    <div class="error">{error}</div>
   {/if}
 </Modal>

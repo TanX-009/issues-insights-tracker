@@ -210,9 +210,9 @@
   </div>
 
   {#if error}
-    <error>
+    <div class="error">
       {error}
-    </error>
+    </div>
   {:else}
     <div class="flex justify-between items-center mb-0">
       <h2 class="text-xl font-semibold">Open Issues by Severity</h2>

@@ -64,12 +64,12 @@
       bind:value={description}
       required
     ></textarea>
+    {#if error}
+      <div class="error">{error}</div>
+    {/if}
 
     <div class="flex justify-end gap-2">
       <button class="px-4 py-2 rounded" type="submit"> Create </button>
     </div>
-    {#if error}
-      <error>{error}</error>
-    {/if}
   </form>
 </Modal>

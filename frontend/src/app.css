@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 @layer base {
-  error {
-    @apply px-3 py-1 text-error bg-errorContainer rounded;
+  .error {
+    @apply px-3 py-1 w-fit h-fit mx-auto text-error bg-errorContainer rounded;
   }
 
   input,
@@ -20,7 +20,7 @@
     &.low {
       @apply text-onSurface bg-surfaceContainerHighest;
     }
-    &.error {
+    &.err {
       @apply text-error bg-errorContainer;
     }
   }
