@@ -1,29 +1,23 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import { Chart, registerables } from "chart.js";
   import { goto } from "$app/navigation";
   import { browser } from "$app/environment";
+  import Modal from "$lib/components/Modal.svelte";
   import type { TIssue } from "$lib/types/issue";
   import handleResponse from "$lib/utils/response";
   import type { TUser } from "$lib/types/user";
-  import CreateIssueModal from "$lib/components/CreateIssueModal.svelte";
   import { truncateText } from "$lib/utils/string";
-  import IssueModal from "$lib/components/IssueModal.svelte";
+  import { PUBLIC_API_URL } from "$env/static/public";
+  import Urls from "$lib/api/urls";
 
   Chart.register(...registerables);
 
-  const { data } = $props<{
-    data: {
-      user: TUser;
-    };
-  }>();
+  const { data } = $props<{ data: { user: TUser; token: string } }>();
 
+  let eventSource: EventSource | null = null;
   let issues: TIssue[] = $state([]);
   let error = $state("");
-
-  let issueModalEl: IssueModal | null = $state(null);
-  let createIssueModalEl: CreateIssueModal | null = $state(null);
-
   let chart: Chart | null = null;
   let canvasEl: HTMLCanvasElement | null = $state(null);
 
@@ -33,32 +27,31 @@
     "HIGH",
     "CRITICAL",
   ];
+  const statuses: TIssue["status"][] = [
+    "OPEN",
+    "IN_PROGRESS",
+    "DONE",
+    "TRIAGED",
+  ];
 
   const fetchIssues = async () => {
     try {
       const res = await fetch("/api/issues");
-
       if (!res.ok) {
-        return {
-          issues: [],
-          error: `Failed to fetch issues: ${res.status} ${res.statusText}`,
-        };
+        error = `Failed to fetch issues: ${res.status} ${res.statusText}`;
+        return;
       }
 
       const response = await res.json();
-
       const status = handleResponse<TIssue[]>(
         response,
-        (res) => {
-          issues = res;
-        },
-        (err) => {
-          error = err.detail;
-        },
+        (res) => (issues = res),
+        (err) => (error = err.detail),
       );
+
       if (status === 401) goto("/logout");
     } catch (e) {
-      error = e instanceof Error ? e.message : "Unknown error occurred";
+      error = e instanceof Error ? e.message : "Unknown error";
     }
   };
 
@@ -69,23 +62,16 @@
       HIGH: 0,
       CRITICAL: 0,
     };
-
     issues.forEach((issue) => {
-      if (issue.status === "OPEN") {
-        grouped[issue.severity] = (grouped[issue.severity] || 0) + 1;
-      }
+      if (issue.status === "OPEN") grouped[issue.severity]++;
     });
-
-    return severityOrder.map((severity) => grouped[severity] || 0);
+    return severityOrder.map((s) => grouped[s]);
   };
 
   const renderChart = () => {
     const counts = groupOpenIssuesBySeverity(issues);
-
     if (canvasEl) {
-      if (chart) {
-        chart.destroy();
-      }
+      if (chart) chart.destroy();
       chart = new Chart(canvasEl, {
         type: "bar",
         data: {
@@ -101,77 +87,153 @@
         },
         options: {
           responsive: true,
-          plugins: {
-            legend: { display: false },
-          },
+          plugins: { legend: { display: false } },
           scales: {
-            y: {
-              beginAtZero: true,
-              ticks: { stepSize: 1, precision: 0 },
-            },
+            y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 } },
           },
         },
       });
     }
   };
 
-  const getSeverityColor = (severity: TIssue["severity"]) => {
-    return (
-      {
-        LOW: "text-blue-500",
-        MEDIUM: "text-yellow-500",
-        HIGH: "text-orange-500",
-        CRITICAL: "text-red-500",
-      }[severity] ?? "text-gray-700"
-    );
+  const getSeverityColor = (severity: TIssue["severity"]) =>
+    ({
+      LOW: "text-blue-500",
+      MEDIUM: "text-yellow-500",
+      HIGH: "text-orange-500",
+      CRITICAL: "text-red-500",
+    })[severity] ?? "text-gray-700";
+
+  const getStatusColor = (status: TIssue["status"]) =>
+    ({
+      OPEN: "bg-green-100 text-green-800",
+      TRIAGED: "bg-yellow-100 text-yellow-800",
+      IN_PROGRESS: "bg-blue-100 text-blue-800",
+      DONE: "bg-gray-200 text-gray-700",
+    })[status] ?? "bg-gray-100 text-gray-600";
+
+  const sortIssues = (a: TIssue, b: TIssue) =>
+    severityOrder.indexOf(b.severity) - severityOrder.indexOf(a.severity);
+
+  // Modal state
+  let modalEl: Modal;
+  let modalMode: "CREATE" | "EDIT" | "DELETE" = $state("CREATE");
+  let modalError = $state("");
+
+  let id: TIssue["id"] = $state(0);
+  let title: TIssue["title"] = $state("");
+  let description: TIssue["description"] = $state("");
+  let severity: TIssue["severity"] = $state("LOW");
+  let status: TIssue["status"] = $state("OPEN");
+
+  const openCreateModal = () => {
+    modalMode = "CREATE";
+    id = 0;
+    title = "";
+    description = "";
+    severity = "LOW";
+    status = "OPEN";
+    modalEl.open();
   };
 
-  const getStatusColor = (status: TIssue["status"]) => {
-    return (
-      {
-        OPEN: "bg-green-100 text-green-800",
-        TRIAGED: "bg-yellow-100 text-yellow-800",
-        IN_PROGRESS: "bg-blue-100 text-blue-800",
-        DONE: "bg-gray-200 text-gray-700",
-      }[status] ?? "bg-gray-100 text-gray-600"
-    );
+  const openEditModal = (issue: TIssue) => {
+    modalMode = "EDIT";
+    id = issue.id;
+    title = issue.title;
+    description = issue.description;
+    severity = issue.severity;
+    status = issue.status;
+    modalEl.open();
   };
 
-  function sortIssues(a: TIssue, b: TIssue) {
-    return (
-      severityOrder.indexOf(b.severity) - severityOrder.indexOf(a.severity)
+  const openDeleteModal = () => {
+    modalMode = "DELETE";
+    modalEl.open();
+  };
+
+  const onCloseModal = () => {
+    id = 0;
+    title = "";
+    description = "";
+    severity = "LOW";
+    status = "OPEN";
+
+    modalError = "";
+  };
+
+  async function saveIssue(e: SubmitEvent) {
+    e.preventDefault();
+    const res = await fetch("/api/issues", {
+      method: id ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, title, description, severity, status }),
+    });
+    const body = await res.json();
+    const code = handleResponse<TIssue>(
+      body,
+      () => {
+        modalEl.close();
+        fetchIssues();
+      },
+      (err) => (modalError = err.detail),
     );
+    if (code === 401) goto("/logout");
   }
 
-  function onIssueOpen(issue: TIssue) {
-    issueModalEl?.open(issue);
+  async function deleteIssue(e: SubmitEvent) {
+    e.preventDefault();
+    const res = await fetch("/api/issues", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    const body = await res.json();
+    const code = handleResponse<TIssue>(
+      body,
+      () => {
+        modalEl.close();
+        fetchIssues();
+      },
+      (err) => (modalError = err.detail),
+    );
+    if (code === 401) goto("/logout");
   }
 
   onMount(() => {
     if (!browser) return;
-
     fetchIssues();
 
-    // const interval = setInterval(async () => {
-    //   await invalidate("page");
-    // }, 10000);
+    if (["MAINTAINER", "ADMIN"].includes(data.user.role)) {
+      if (data.token) {
+        eventSource = new EventSource(
+          `${PUBLIC_API_URL}${Urls.issuesEvent}?token=${data.token}`,
+        );
 
-    return () => {
-      // clearInterval(interval);
-      chart?.destroy();
-    };
+        eventSource.onmessage = (event) => {
+          const message = event.data;
+          console.log("SSE:", message);
+          fetchIssues(); // refresh issue list and chart
+        };
+
+        eventSource.onerror = (err) => {
+          console.error("SSE error:", err);
+          eventSource?.close();
+        };
+      }
+    }
+  });
+
+  onDestroy(() => {
+    chart?.destroy();
   });
 
   $effect(() => {
-    if (canvasEl && issues.length > 0 && !chart) {
-      renderChart();
-    }
+    if (canvasEl && issues.length > 0 && !chart) renderChart();
   });
 
   $effect(() => {
     if (chart && issues) {
-      const updated = groupOpenIssuesBySeverity(issues);
-      chart.data.datasets[0].data = updated;
+      chart.data.datasets[0].data = groupOpenIssuesBySeverity(issues);
       chart.update();
     }
   });
@@ -180,10 +242,6 @@
 <svelte:head>
   <title>Dashboard - Issue Tracker</title>
 </svelte:head>
-
-<CreateIssueModal bind:this={createIssueModalEl} onsuccess={fetchIssues} />
-
-<IssueModal bind:this={issueModalEl} onsuccess={fetchIssues} user={data.user} />
 
 <div class="p-3 md:p-5 space-y-8">
   <div class="flex justify-between flex-wrap">
@@ -216,7 +274,7 @@
   {:else}
     <div class="flex justify-between items-center mb-0">
       <h2 class="text-xl font-semibold">Open Issues by Severity</h2>
-      <button onclick={() => createIssueModalEl?.open()}>New Issue</button>
+      <button onclick={openCreateModal}>New Issue</button>
     </div>
     <div
       class="rounded-xl p-3 md:p-5 min:w-fit w-full mx-auto flex flex-col 2xl:flex-row justify-center items-center 2xl:items-start gap-8"
@@ -242,6 +300,12 @@
                 </span>
               </div>
             {/each}
+            <div>
+              <span class="font-semibold text-tertiary"> TOTAL </span>
+              <span class="px-2 py-1 rounded-md text-l">
+                {issues.length}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -269,7 +333,7 @@
                 <tr
                   class="hover:bg-surfaceContainerHigh cursor-pointer"
                   onclick={() => {
-                    onIssueOpen(issue);
+                    openEditModal(issue);
                   }}
                 >
                   <td class="px-4 py-2">{issue.id}</td>
@@ -305,3 +369,75 @@
     </div>
   {/if}
 </div>
+
+<!-- Modal -->
+<Modal bind:this={modalEl} onclose={onCloseModal}>
+  {#snippet header()}
+    <h2 class="text-lg font-semibold">
+      {modalMode === "CREATE"
+        ? "Create Issue"
+        : modalMode === "EDIT"
+          ? "Edit Issue"
+          : "Delete Issue"}
+    </h2>
+    {#if modalError}<div class="error">{modalError}</div>{/if}
+  {/snippet}
+
+  {#if modalMode === "DELETE"}
+    <form
+      onsubmit={deleteIssue}
+      class="space-y-4 p-4 bg-surfaceContainer rounded"
+    >
+      <p>Are you sure you want to delete <strong>{title}</strong>?</p>
+      <div class="flex justify-end gap-2">
+        <button class="err" type="submit">Delete</button>
+        <button class="low" type="button" onclick={() => modalEl.close()}
+          >Cancel</button
+        >
+      </div>
+    </form>
+  {:else}
+    <form
+      onsubmit={saveIssue}
+      class="space-y-4 p-4 bg-surfaceContainer rounded"
+    >
+      <input
+        class="w-full p-2 rounded"
+        type="text"
+        placeholder="Title"
+        bind:value={title}
+        required
+      />
+      <textarea
+        class="w-full p-2 rounded"
+        placeholder="Description"
+        bind:value={description}
+        required
+      ></textarea>
+      {#if data.user.role !== "REPORTER"}
+        <div class="flex gap-2">
+          <select class="w-1/2 p-2 rounded" bind:value={severity}>
+            {#each severityOrder as s, index (index)}<option value={s}
+                >{s}</option
+              >{/each}
+          </select>
+          {#if modalMode === "EDIT"}
+            <select class="w-1/2 p-2 rounded" bind:value={status}>
+              {#each statuses as s (s)}<option value={s}
+                  >{s.replace("_", " ")}</option
+                >{/each}
+            </select>
+          {/if}
+        </div>
+      {/if}
+      <div class="flex justify-end gap-2">
+        {#if data.user.role === "ADMIN" && modalMode !== "CREATE"}
+          <button class="err" onclick={openDeleteModal}>Delete</button>
+        {/if}
+        <button class="" type="submit">
+          {modalMode === "EDIT" ? "Save" : "Create"}
+        </button>
+      </div>
+    </form>
+  {/if}
+</Modal>

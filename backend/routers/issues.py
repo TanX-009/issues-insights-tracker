@@ -1,5 +1,15 @@
-from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, status
+import asyncio
+from fastapi import (
+    APIRouter,
+    Depends,
+    UploadFile,
+    File,
+    Form,
+    HTTPException,
+    status,
+)
 from sqlalchemy.orm import Session, joinedload
+from starlette.responses import StreamingResponse
 from monitoring.metrics import ISSUES_CREATED, REQUEST_TIME
 from db import get_db
 from models.issue import Issue, Severity
@@ -8,6 +18,7 @@ from dependencies import get_current_user, require_role
 from schemas.issue import IssueUpdate, IssueOut
 import os
 import shutil
+import json
 from typing import List
 from core.logging import logger
 
@@ -17,44 +28,95 @@ UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
+connected_clients: List[asyncio.Queue] = []
+
+
+@router.get("/events")
+async def sse_subscribe():
+    """
+    Endpoint for clients to subscribe to Server-Sent Events (SSE).
+    Clients will receive updates when new issues are created.
+    """
+    client_queue = asyncio.Queue()
+    connected_clients.append(client_queue)
+    logger.info(f"New SSE client connected. Total clients: {len(connected_clients)}")
+
+    async def event_generator():
+        try:
+            while True:
+                # Wait for a new message to be put into the queue
+                message = await client_queue.get()
+                # Format the message as an SSE event
+                yield f"data: {json.dumps(message)}\n\n"
+        except asyncio.CancelledError:
+            # This exception is raised when the client disconnects
+            logger.info("SSE client disconnected.")
+        finally:
+            # Ensure the client's queue is removed when they disconnect
+            connected_clients.remove(client_queue)
+            logger.info(f"SSE client removed. Total clients: {len(connected_clients)}")
+
+    # Return a StreamingResponse with the event_generator
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
 @router.post("/", response_model=IssueOut)
-@REQUEST_TIME.time()
-def create_issue(
+async def create_issue(  # Removed @REQUEST_TIME.time() decorator here
     title: str = Form(...),
     description: str = Form(...),
     file: UploadFile = File(None),
     db: Session = Depends(get_db),
     user=Depends(require_role(["REPORTER", "MAINTAINER", "ADMIN"])),
 ):
-    file_path = None
-    if file:
-        file_path = os.path.join(UPLOAD_DIR, file.filename)
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+    """
+    Creates a new issue and notifies all subscribed SSE clients.
+    """
+    # Use REQUEST_TIME.time() as an async context manager
+    with REQUEST_TIME.time():
+        file_path = None
+        if file:
+            # Ensure the upload directory exists
+            os.makedirs(UPLOAD_DIR, exist_ok=True)
+            file_path = os.path.join(UPLOAD_DIR, file.filename)
+            try:
+                with open(file_path, "wb") as buffer:
+                    shutil.copyfileobj(file.file, buffer)
+            except Exception as e:
+                logger.error(f"Failed to save file: {e}")
+                file_path = None  # Reset file_path if saving fails
 
-    issue = Issue(
-        title=title,
-        description=description,
-        severity=Severity.LOW,  # 👈 Always default to LOW
-        file_path=file_path,
-        reporter_id=user.id,
-    )
-    db.add(issue)
-    db.commit()
-    db.refresh(issue)
+        issue = Issue(
+            title=title,
+            description=description,
+            severity=Severity.LOW,  # 👈 Always default to LOW
+            file_path=file_path,
+            reporter_id=user.id,
+        )
+        db.add(issue)
+        db.commit()
+        db.refresh(issue)
 
-    logger.info(
-        {
-            "event": "issue_created",
-            "user_id": user.id,
-            "issue_id": issue.id,
-            "severity": "LOW",
-            "file_uploaded": bool(file),
-        }
-    )
-    ISSUES_CREATED.inc()
+        logger.info(
+            {
+                "event": "issue_created",
+                "user_id": user.id,
+                "issue_id": issue.id,
+                "severity": "LOW",
+                "file_uploaded": bool(file),
+            }
+        )
+        ISSUES_CREATED.inc()
 
-    return issue
+        # --- SSE: Notify connected clients ---
+        for client_queue in connected_clients:
+            try:
+                # Put the issue data into each client's queue
+                await client_queue.put(f"Issue created: {issue.title} (id={issue.id})")
+            except Exception as e:
+                logger.error(f"Failed to send SSE message to client: {e}")
+        # --- End SSE notification ---
+
+        return issue
 
 
 @router.get("/", response_model=List[IssueOut])

@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from core.jwt import decode_access_token
 from db import get_db
@@ -27,3 +27,18 @@ def require_role(required: list[str]):
         return user
 
     return wrapper
+
+
+def require_sse_user(token: str, db: Session = Depends(get_db)) -> User:
+    if not token:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail="Missing token")
+
+    payload = decode_access_token(token)
+    if not payload:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+
+    user = get_current_user(token, db)
+    if not user or user.role.value not in ("MAINTAINER", "ADMIN"):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
+    return user

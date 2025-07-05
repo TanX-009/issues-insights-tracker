@@ -1,6 +1,8 @@
 const Urls = {
   login: "/auth/login",
 
+  issuesEvent: "/api/issues/events",
+
   getIssues: "/api/issues/",
   createIssue: "/api/issues/",
   updateIssue: "/api/issues/$$issue_id$$",

@@ -1,8 +1,9 @@
 import type { PageServerLoad } from "./$types";
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, cookies }) => {
   try {
-    return { user: locals.user };
+    const token = cookies.get("auth_token");
+    return { user: locals.user, token };
   } catch (e) {
     return {
       issues: [],

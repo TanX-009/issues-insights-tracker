@@ -48,6 +48,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
       Authorization: `Bearer ${token}`,
     },
   );
+  console.log(response);
 
   return json(response);
 };
