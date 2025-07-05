@@ -46,11 +46,12 @@
     const res = await fetch("/api/users");
     const body = await res.json();
 
-    handleResponse<TUser[]>(
+    const status = handleResponse<TUser[]>(
       body,
       (data) => (users = data),
       (err) => (error = err.detail),
     );
+    if (status === 401) goto("/logout");
   }
 
   async function saveUser(e: SubmitEvent) {
@@ -106,7 +107,10 @@
 <div class="p-6 space-y-6">
   <div class="flex justify-between items-center">
     <h1 class="text-2xl font-bold text-primary">Users</h1>
-    <button class="button med" onclick={openAddModal}>Add User</button>
+    <div class="flex gap-3">
+      <a class="button low" href="/">Dashboard</a>
+      <button class="button med" onclick={openAddModal}>Add User</button>
+    </div>
   </div>
 
   {#if error}
