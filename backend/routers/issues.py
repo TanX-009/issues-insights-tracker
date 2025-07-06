@@ -1,4 +1,5 @@
 import asyncio
+from uuid import uuid4
 from fastapi import (
     APIRouter,
     Depends,
@@ -61,7 +62,7 @@ async def sse_subscribe():
 
 
 @router.post("/", response_model=IssueOut)
-async def create_issue(  # Removed @REQUEST_TIME.time() decorator here
+async def create_issue(
     title: str = Form(...),
     description: str = Form(...),
     file: UploadFile = File(None),
@@ -71,24 +72,31 @@ async def create_issue(  # Removed @REQUEST_TIME.time() decorator here
     """
     Creates a new issue and notifies all subscribed SSE clients.
     """
-    # Use REQUEST_TIME.time() as an async context manager
     with REQUEST_TIME.time():
         file_path = None
-        if file:
-            # Ensure the upload directory exists
+
+        if file and file.filename:
             os.makedirs(UPLOAD_DIR, exist_ok=True)
-            file_path = os.path.join(UPLOAD_DIR, file.filename)
+
+            # Get file extension safely
+            _, ext = os.path.splitext(file.filename)
+            safe_ext = ext if ext else ""
+
+            # Create UUID filename
+            uuid_filename = f"{uuid4().hex}{safe_ext}"
+            file_path = os.path.join(UPLOAD_DIR, uuid_filename)
+
             try:
                 with open(file_path, "wb") as buffer:
                     shutil.copyfileobj(file.file, buffer)
             except Exception as e:
                 logger.error(f"Failed to save file: {e}")
-                file_path = None  # Reset file_path if saving fails
+                file_path = None
 
         issue = Issue(
             title=title,
             description=description,
-            severity=Severity.LOW,  # 👈 Always default to LOW
+            severity=Severity.LOW,
             file_path=file_path,
             reporter_id=user.id,
         )
@@ -241,7 +249,9 @@ async def update_issue(
 
 @router.delete("/{issue_id}")
 async def delete_issue(
-    issue_id: int, db: Session = Depends(get_db), user=Depends(require_role(["ADMIN"]))
+    issue_id: int,
+    db: Session = Depends(get_db),
+    user=Depends(require_role(["ADMIN"])),
 ):
     issue = db.query(Issue).get(issue_id)
     if not issue:
@@ -252,7 +262,36 @@ async def delete_issue(
                 "user_id": user.id,
             }
         )
-        raise HTTPException(404)
+        raise HTTPException(status_code=404, detail="Issue not found")
+
+    # Delete attached file if it exists
+    if issue.file_path:
+        try:
+            os.remove(issue.file_path)
+            logger.info(
+                {
+                    "event": "file_deleted",
+                    "file_path": issue.file_path,
+                    "issue_id": issue_id,
+                }
+            )
+        except FileNotFoundError:
+            logger.warning(
+                {
+                    "event": "file_not_found_on_delete",
+                    "file_path": issue.file_path,
+                    "issue_id": issue_id,
+                }
+            )
+        except Exception as e:
+            logger.error(
+                {
+                    "event": "file_delete_error",
+                    "file_path": issue.file_path,
+                    "issue_id": issue_id,
+                    "error": str(e),
+                }
+            )
 
     db.delete(issue)
     db.commit()
@@ -262,7 +301,6 @@ async def delete_issue(
     # --- SSE: Notify connected clients ---
     for client_queue in connected_clients:
         try:
-            # Put the issue data into each client's queue
             await client_queue.put(f"Issue deleted: {issue.title} (id={issue.id})")
         except Exception as e:
             logger.error(f"Failed to send SSE message to client: {e}")
