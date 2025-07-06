@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Text, Enum, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 from .base import Base
+from .user import User
 import enum
 
 
@@ -34,7 +35,7 @@ class Issue(Base):
         Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     reporter = relationship(
-        "User", back_populates="issues_reported", passive_deletes=True
+        User, back_populates="issues_reported", passive_deletes=True
     )
 
     created_at = Column(DateTime, default=datetime.now(timezone.utc))
