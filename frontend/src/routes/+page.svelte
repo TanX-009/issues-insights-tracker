@@ -602,8 +602,10 @@
           </button>
         </div>
       </form>
-      <div class="prose prose-neutral dark:prose-invert max-w-xl w-full">
-        <h3>Description markdown preview</h3>
+      <div
+        class={`prose ${theme === "dark" ? "prose-invert" : "prose-neutral"}  max-w-xl w-full`}
+      >
+        <h3 class="text-onSurface">Description markdown preview</h3>
         <Markdown md={description} />
       </div>
     </div>
