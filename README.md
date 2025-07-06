@@ -8,20 +8,20 @@ Welcome to the Issues & Insights Tracker, a mini SaaS application designed to st
 
 ## Table of Contents
 
-- [Features](https://www.google.com/search?q=%23features)
-- [Technical Stack](https://www.google.com/search?q=%23technical-stack)
-- [Architecture Overview](https://www.google.com/search?q=%23architecture-overview)
-- [Getting Started](https://www.google.com/search?q=%23getting-started)
-  - [Prerequisites](https://www.google.com/search?q=%23prerequisites)
-  - [Running with Docker Compose](https://www.google.com/search?q=%23running-with-docker-compose)
-  - [Running Locally (Development)](https://www.google.com/search?q=%23running-locally-development)
-    - [Backend Setup](https://www.google.com/search?q=%23backend-setup)
-    - [Frontend Setup](https://www.google.com/search?q=%23frontend-setup)
-- [API Documentation](https://www.google.com/search?q=%23api-documentation)
-- [Tests](https://www.google.com/search?q=%23tests)
-- [Observability](https://www.google.com/search?q=%23observability)
-- [Bonus Features Implemented](https://www.google.com/search?q=%23bonus-features-implemented)
-- [Future Improvements](https://www.google.com/search?q=%23future-improvements)
+- [Features](#features)
+- [Technical Stack](#technical-stack)
+- [Architecture Overview](#architecture-overview)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Running with Docker Compose](#running-with-docker-compose)
+  - [Running Locally (Development)](#running-locally-development)
+    - [Backend Setup](#backend-setup)
+    - [Frontend Setup](#frontend-setup)
+- [API Documentation](#api-documentation)
+- [Tests](#tests)
+- [Observability](#observability)
+- [Bonus Features Implemented](#bonus-features-implemented)
+- [Future Improvements](#future-improvements)
 
 ---
 
@@ -225,6 +225,7 @@ If you prefer to run services individually for easier development and debugging,
     ```bash
     docker run --name issues-tracker-db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=issues_db -p 5432:5432 -d postgres:15
     ```
+
 4.  **Create virtual environment:**
 
     ```bash
@@ -232,19 +233,19 @@ If you prefer to run services individually for easier development and debugging,
     source .venv/bin/activate # for bash for other shells or windows use appropriate source files
     ```
 
-6.  **Install Python Dependencies:**
+5.  **Install Python Dependencies:**
 
     ```bash
     pip install -r requirements.txt
     ```
 
-7.  **Run Database Migrations:**
+6.  **Run Database Migrations:**
 
     ```bash
     alembic upgrade head
     ```
 
-8.  **Start the Backend API:**
+7.  **Start the Backend API:**
 
     ```bash
     fastapi dev main.py
@@ -253,7 +254,8 @@ If you prefer to run services individually for easier development and debugging,
     The backend API will be accessible at `http://localhost:8000`.
     The prometheus API will be accessible at `http://localhost:8001`.
 
-10.  **Start the Daily Stats Worker (in a separate terminal):**
+8.  **Start the Daily Stats Worker (in a separate terminal):**
+
 
     ```bash
     python worker.py
