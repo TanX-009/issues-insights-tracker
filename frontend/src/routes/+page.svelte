@@ -342,7 +342,7 @@
         </div>
       {/if}
       <button
-        class="low flex items-center justify-center gap-1 px-2.5 h-full"
+        class="low flex items-center justify-center gap-1 px-2.5 aspect-square"
         onclick={toggleTheme}
         aria-label={theme === "light" ? "Light" : "Dark"}
       >
