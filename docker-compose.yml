@@ -1,0 +1,37 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:15
+    restart: always
+    env_file: ./backend/.env
+    environment:
+      POSTGRES_HOST: db
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  backend:
+    build: ./backend
+    depends_on:
+      - db
+    env_file: ./backend/.env
+    environment:
+      POSTGRES_HOST: db
+      RUN_WORKER: "false"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+  frontend:
+    build: ./frontend
+    env_file: ./frontend/.env.production
+    # environment:
+    #   PUBLIC_SSE_URL: http://localhost:7000
+    #   PUBLIC_API_URL: http://backend:8000
+    ports:
+      - "3000:3000"
+    working_dir: /app
+    depends_on:
+      - backend
+volumes:
+  pgdata:

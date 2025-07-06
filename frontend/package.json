@@ -20,8 +20,10 @@
     "@eslint/js": "^9.18.0",
     "@playwright/test": "^1.49.1",
     "@sveltejs/adapter-auto": "^6.0.0",
+    "@sveltejs/adapter-node": "^5.2.12",
     "@sveltejs/kit": "^2.16.0",
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
+    "@tailwindcss/typography": "^0.5.16",
     "@tailwindcss/vite": "^4.0.0",
     "@types/node": "^24.0.10",
     "eslint": "^9.18.0",
@@ -45,8 +47,10 @@
     "axios": "^1.10.0",
     "chart.js": "^4.5.0",
     "client": "link:@auth/sveltekit/client",
+    "dotenv": "^17.0.1",
     "marked": "^16.0.0",
     "server": "link:@auth/sveltekit/server",
+    "svelte-exmarkdown": "^5.0.1",
     "zod": "^3.25.72"
   }
 }
