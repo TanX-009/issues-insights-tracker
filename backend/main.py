@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from core.config import BASE_PATH
 from monitoring.metrics import start_metrics_server
 from routers import auth, issues, stats, user
 from db import Base, engine
@@ -10,7 +11,7 @@ from db import Base, engine
 # Create all tables (in production you'd use Alembic instead)
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Issues & Insights Tracker", version="1.0.0")
+app = FastAPI(title="Issues & Insights Tracker", version="1.0.0", root_path=BASE_PATH)
 
 # Allow frontend to talk to backend
 app.add_middleware(
