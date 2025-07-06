@@ -6,19 +6,23 @@
 
   async function login() {
     message = "";
-    const res = await fetch("/login", {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    try {
+      const res = await fetch("/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
-    if (res.ok) {
-      goto("/");
-    } else {
-      const body = await res.json();
-      message = body?.error?.detail || "Invalid credentials";
+      if (res.ok) {
+        goto("/");
+      } else {
+        const body = await res.json();
+        message = body?.error?.detail || "Invalid credentials";
+      }
+    } catch (e) {
+      message = e instanceof Error ? e.message : "Unknown error";
     }
   }
 </script>

@@ -1,4 +1,4 @@
-import { PUBLIC_API_URL } from "$env/static/public";
+import { env } from "$env/dynamic/public";
 import axios, { type AxiosRequestConfig } from "axios";
 // import Services from "./serviceUrls";
 
@@ -22,7 +22,7 @@ interface TApiFailure {
 type TApiResponse<T> = TApiSuccess<T> | TApiFailure;
 
 const instance = axios.create({
-  baseURL: PUBLIC_API_URL,
+  baseURL: env.PUBLIC_API_URL,
   timeout: 300000,
   headers: {
     Accept: "application/json",
@@ -93,7 +93,7 @@ async function requestFailureCallback<TResponse>(
     console.error("Error: ", error);
     return {
       success: false,
-      status: 0,
+      status: 500,
       error: { detail: "An unexpected error occurred!" } as TErrorResponse,
     };
   }
@@ -101,7 +101,7 @@ async function requestFailureCallback<TResponse>(
   if (error.code === "ERR_NETWORK") {
     return {
       success: false,
-      status: 0,
+      status: 500,
       error: { detail: "Network error!" },
     };
   }
@@ -109,7 +109,7 @@ async function requestFailureCallback<TResponse>(
   if (!error.response) {
     return {
       success: false,
-      status: 0,
+      status: 500,
       error: { detail: "Unknown network error occured!" },
     };
   }

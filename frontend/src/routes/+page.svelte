@@ -8,8 +8,9 @@
   import handleResponse from "$lib/utils/response";
   import type { TUser } from "$lib/types/user";
   import { truncateText } from "$lib/utils/string";
-  import { PUBLIC_API_URL } from "$env/static/public";
+  import { env } from "$env/dynamic/public";
   import Urls from "$lib/api/urls";
+  import Markdown from "svelte-exmarkdown";
 
   Chart.register(...registerables);
 
@@ -178,7 +179,7 @@
     if (["MAINTAINER", "ADMIN"].includes(data.user.role)) {
       if (data.token) {
         eventSource = new EventSource(
-          `${PUBLIC_API_URL}${Urls.issuesEvent}?token=${data.token}`,
+          `${env.PUBLIC_SSE_URL}${Urls.issuesEvent}?token=${data.token}`,
         );
 
         eventSource.onmessage = (event) => {
@@ -196,6 +197,7 @@
 
     return () => {
       chart?.destroy();
+      eventSource?.close();
     };
   });
 
@@ -396,55 +398,60 @@
       </div>
     </form>
   {:else}
-    <form
-      onsubmit={saveIssue}
-      class="space-y-4 p-4 bg-surfaceContainer rounded"
-    >
-      <label for="title">Title</label>
-      <input
-        id="title"
-        class="w-full"
-        type="text"
-        placeholder="Title"
-        bind:value={title}
-        required
-      />
-      <label for="description">Description</label>
-      <textarea
-        id="description"
-        class="w-full mb-0"
-        placeholder="Description"
-        bind:value={description}
-        required
-      ></textarea>
-      {#if data.user.role !== "REPORTER"}
-        {#if modalMode === "EDIT"}
-          <label for="severity">Severity</label>
-          <select
-            id="severity"
-            class="w-full p-2 rounded"
-            bind:value={severity}
-          >
-            {#each severityOrder as s, index (index)}<option value={s}
-                >{s}</option
-              >{/each}
-          </select>
-          <label for="status">Status</label>
-          <select id="status" class="w-full p-2 rounded" bind:value={status}>
-            {#each statuses as s (s)}<option value={s}
-                >{s.replace("_", " ")}</option
-              >{/each}
-          </select>
+    <div class="flex flex-col lg:flex-row relative">
+      <form
+        onsubmit={saveIssue}
+        class="space-y-4 max-w-xl w-full h-fit p-4 sticky top-0 bg-surfaceContainer rounded"
+      >
+        <label for="title">Title</label>
+        <input
+          id="title"
+          class="w-full"
+          type="text"
+          placeholder="Title"
+          bind:value={title}
+          required
+        />
+        <label for="description">Description</label>
+        <textarea
+          id="description"
+          class="w-full mb-0"
+          placeholder="Description"
+          bind:value={description}
+          required
+        ></textarea>
+        {#if data.user.role !== "REPORTER"}
+          {#if modalMode === "EDIT"}
+            <label for="severity">Severity</label>
+            <select
+              id="severity"
+              class="w-full p-2 rounded"
+              bind:value={severity}
+            >
+              {#each severityOrder as s, index (index)}<option value={s}
+                  >{s}</option
+                >{/each}
+            </select>
+            <label for="status">Status</label>
+            <select id="status" class="w-full p-2 rounded" bind:value={status}>
+              {#each statuses as s (s)}<option value={s}
+                  >{s.replace("_", " ")}</option
+                >{/each}
+            </select>
+          {/if}
         {/if}
-      {/if}
-      <div class="flex justify-end gap-2">
-        {#if data.user.role === "ADMIN" && modalMode !== "CREATE"}
-          <button class="err" onclick={openDeleteModal}>Delete</button>
-        {/if}
-        <button class="" type="submit">
-          {modalMode === "EDIT" ? "Save" : "Create"}
-        </button>
+        <div class="flex justify-end gap-2">
+          {#if data.user.role === "ADMIN" && modalMode !== "CREATE"}
+            <button class="err" onclick={openDeleteModal}>Delete</button>
+          {/if}
+          <button class="" type="submit">
+            {modalMode === "EDIT" ? "Save" : "Create"}
+          </button>
+        </div>
+      </form>
+      <div class="prose prose-neutral dark:prose-invert max-w-xl w-full">
+        <Markdown md={description} />
       </div>
-    </form>
+    </div>
   {/if}
 </Modal>
