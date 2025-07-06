@@ -4,6 +4,7 @@
   import handleResponse from "$lib/utils/response";
   import Modal from "$lib/components/Modal.svelte";
   import { goto } from "$app/navigation";
+  import { base } from "$app/paths";
 
   let users: TUser[] = $state([]);
   let error = $state("");
@@ -43,7 +44,7 @@
   }
 
   async function fetchUsers() {
-    const res = await fetch("/api/users");
+    const res = await fetch(base + "/api/users");
     const body = await res.json();
 
     const status = handleResponse<TUser[]>(
@@ -51,12 +52,12 @@
       (data) => (users = data),
       (err) => (error = err.detail),
     );
-    if (status === 401) goto("/logout");
+    if (status === 401) goto(base+"/logout");
   }
 
   async function saveUser(e: SubmitEvent) {
     e.preventDefault();
-    const res = await fetch("/api/users", {
+    const res = await fetch(base + "/api/users", {
       method: id ? "PUT" : "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, email, role, password }),
@@ -72,12 +73,12 @@
       (err) => (modalError = err.detail),
     );
 
-    if (status === 401) goto("/logout");
+    if (status === 401) goto(base+"/logout");
   }
 
   async function deleteUser(e: SubmitEvent) {
     e.preventDefault();
-    const res = await fetch("/api/users", {
+    const res = await fetch(base + "/api/users", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
@@ -93,7 +94,7 @@
       (err) => (modalError = err.detail),
     );
 
-    if (status === 401) goto("/logout");
+    if (status === 401) goto(base+"/logout");
   }
 
   onMount(fetchUsers);

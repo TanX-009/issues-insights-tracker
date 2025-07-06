@@ -12,9 +12,10 @@
   import { env } from "$env/dynamic/public";
   import Urls from "$lib/api/urls";
   import Markdown from "svelte-exmarkdown";
-  import { PUBLIC_API_URL, PUBLIC_SSE_URL } from "$env/static/public";
+  import { PUBLIC_SSE_URL } from "$env/static/public";
   import Sun from "$lib/components/icons/Sun.svelte";
   import Moon from "$lib/components/icons/Moon.svelte";
+  import { base } from "$app/paths";
 
   Chart.register(...registerables);
 
@@ -45,7 +46,7 @@
 
   const fetchIssues = async () => {
     try {
-      const res = await fetch("/api/issues");
+      const res = await fetch(base + "/api/issues");
       if (!res.ok) {
         error = `Failed to fetch issues: ${res.status} ${res.statusText}`;
         return;
@@ -58,7 +59,7 @@
         (err) => (error = err?.detail || "Unknown error"),
       );
 
-      if (status === 401) goto("/logout");
+      if (status === 401) goto(base+"/logout");
     } catch (e) {
       error = e instanceof Error ? e.message : "Unknown error";
     }
@@ -66,7 +67,7 @@
 
   const fetchStats = async () => {
     try {
-      const res = await fetch("/api/stats");
+      const res = await fetch(base + "/api/stats");
       if (!res.ok) {
         error = `Failed to fetch issues: ${res.status} ${res.statusText}`;
         return;
@@ -79,7 +80,7 @@
         (err) => (error = err?.detail || "Unknown error"),
       );
 
-      if (status === 401) goto("/logout");
+      if (status === 401) goto(base+"/logout");
     } catch (e) {
       error = e instanceof Error ? e.message : "Unknown error";
     }
@@ -192,7 +193,7 @@
       formData.append("status", status);
       if (file) formData.append("file", file);
 
-      const res = await fetch("/api/issues", {
+      const res = await fetch(base + "/api/issues", {
         method: "POST",
         body: formData,
       });
@@ -206,9 +207,9 @@
         },
         (err) => (modalError = err?.detail || "Unknown error!"),
       );
-      if (code === 401) goto("/logout");
+      if (code === 401) goto(base+"/logout");
     } else {
-      const res = await fetch("/api/issues", {
+      const res = await fetch(base + "/api/issues", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, title, description, severity, status }),
@@ -223,13 +224,13 @@
         },
         (err) => (modalError = err.detail),
       );
-      if (code === 401) goto("/logout");
+      if (code === 401) goto(base+"/logout");
     }
   }
 
   async function deleteIssue(e: SubmitEvent) {
     e.preventDefault();
-    const res = await fetch("/api/issues", {
+    const res = await fetch(base + "/api/issues", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
@@ -243,7 +244,7 @@
       },
       (err) => (modalError = err.detail),
     );
-    if (code === 401) goto("/logout");
+    if (code === 401) goto(base+"/logout");
   }
 
   onMount(() => {

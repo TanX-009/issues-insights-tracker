@@ -1,5 +1,6 @@
 import { redirect } from "@sveltejs/kit";
 import type { Handle } from "@sveltejs/kit";
+import { base } from "$app/paths";
 
 const EXACT_PROTECTED_ROUTES = ["/"]; // strictly equal to
 const PREFIX_PROTECTED_ROUTES = ["/issues", "/logout", "/users"]; // startsWith
@@ -15,7 +16,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 
   // Redirect unauthenticated access to protected routes
   if (!token && isProtected) {
-    throw redirect(303, "/login");
+    throw redirect(303, base + "/login");
   }
 
   // Set token and user on locals
@@ -23,8 +24,8 @@ export const handle: Handle = async ({ event, resolve }) => {
   if (user) event.locals.user = JSON.parse(user);
 
   // Redirect authenticated users away from login
-  if (token && pathname === "/login") {
-    throw redirect(303, "/");
+  if (token && pathname === base + "/login") {
+    throw redirect(303, base + "/");
   }
 
   return resolve(event);

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
+  import { base } from "$app/paths";
   let email = "";
   let password = "";
   let message = "";
@@ -7,7 +8,7 @@
   async function login() {
     message = "";
     try {
-      const res = await fetch("/login", {
+      const res = await fetch(base + "/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
         headers: {
@@ -16,7 +17,7 @@
       });
 
       if (res.ok) {
-        goto("/");
+        goto(base + "/");
       } else {
         const body = await res.json();
         message = body?.error?.detail || "Invalid credentials";
