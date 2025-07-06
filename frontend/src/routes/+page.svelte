@@ -12,7 +12,7 @@
   import { env } from "$env/dynamic/public";
   import Urls from "$lib/api/urls";
   import Markdown from "svelte-exmarkdown";
-  import { PUBLIC_API_URL } from "$env/static/public";
+  import { PUBLIC_API_URL, PUBLIC_SSE_URL } from "$env/static/public";
   import Sun from "$lib/components/icons/Sun.svelte";
   import Moon from "$lib/components/icons/Moon.svelte";
 
@@ -130,6 +130,7 @@
   let file_path: TIssue["file_path"] = $state("");
 
   let file: File | null = null;
+  let fileEl: HTMLInputElement | null = $state(null);
 
   function applyTheme(t: "light" | "dark") {
     const root = document.documentElement;
@@ -175,6 +176,7 @@
     status = "OPEN";
     file = null;
     file_path = "";
+    if (fileEl) fileEl.value = "";
 
     modalError = "";
   };
@@ -562,6 +564,7 @@
         {#if modalMode === "CREATE"}
           <label for="file">Attach File</label>
           <input
+            bind:this={fileEl}
             id="file"
             class="w-full"
             type="file"
@@ -581,7 +584,7 @@
               >{file_path.replace("uploads/", "")}</span
             >
             <a
-              href={`${PUBLIC_API_URL}/${file_path}`}
+              href={`${PUBLIC_SSE_URL}/${file_path}`}
               target="_blank"
               download
               class="py-0.5 px-3 bg-primaryContainer text-primary h-full"
