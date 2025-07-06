@@ -6,8 +6,6 @@ Welcome to the Issues & Insights Tracker, a mini SaaS application designed to st
 
 ---
 
---
-
 ## Table of Contents
 
 - [Features](https://www.google.com/search?q=%23features)
@@ -72,7 +70,6 @@ The project leverages the following technologies:
 - **Real-time Communication:**
   - **Server-Sent Events (SSE):** For efficient real-time updates from the backend to the frontend.
 - **Testing:**
-  - **Pytest:** For backend unit and integration tests.
   - **Playwright:** For end-to-end browser automation tests.
 - **Logging:**
   - **Loguru:** For structured and enhanced logging.
@@ -135,7 +132,7 @@ This is the recommended way to run the entire application stack.
 1.  **Clone the repository:**
 
     ```bash
-    git clone <your-repo-link>
+    git clone https://github.com/TanX-009/issues-insights-tracker.git
     cd issues-insights-tracker
     ```
 
@@ -157,7 +154,8 @@ This is the recommended way to run the entire application stack.
     DEFAULT_ADMIN_PASSWORD=adminpassword
     ```
 
-    **Note:** Replace placeholders with strong, unique values, especially for `JWT_SECRET`.
+    > [!NOTE]
+    > Replace placeholders with strong, unique values, especially for `JWT_SECRET`.
 
 3.  **Create Frontend Production Environment File:**
     Navigate to the `frontend/` directory and create a file named `.env.production`. Populate it with the following environment variables:
@@ -165,11 +163,12 @@ This is the recommended way to run the entire application stack.
     ```env
     # frontend/.env.production
     PUBLIC_API_URL=http://backend:8000
-    PUBLIC_SSE_URL=http://backend:8000 # If accessing locally via localhost:3000, use http://localhost:8000
+    PUBLIC_SSE_URL=http://localhost:8000
     SECURE_COOKIES=false # Set to true for HTTPS in production
     ```
 
-    **Important for `PUBLIC_SSE_URL`:** If you are running Docker Compose and want to access the application via `localhost:3000` from your host machine for development or testing, you might need to set `PUBLIC_SSE_URL=http://localhost:8000` in `frontend/.env.production` (or `.env.local` if running frontend locally) to ensure the SSE connection works correctly through the Docker bridge network. For Docker-internal communication (e.g., frontend-to-backend within Docker), `http://backend:8000` is correct.
+    > [!WARNING]
+    > Important for `PUBLIC_API_URL`: If you are running Docker Compose and want to access the application via `localhost:3000` from your host machine for development or testing, you need to set `PUBLIC_API_URL=http://backend:8000` and `PUBLIC_SSE_URL=http://localhost:8000` in `frontend/.env.production` .
 
 4.  **Build and Run with Docker Compose:**
     From the root directory of the project, execute:
@@ -188,7 +187,7 @@ This is the recommended way to run the entire application stack.
     You can log in with the default admin credentials specified in `backend/.env` (e.g., `admin@example.com` / `adminpassword`).
 
 6.  **Access Prometheus Metrics:**
-    Prometheus metrics for the backend can be found at `http://localhost:8001/metrics`.
+    Prometheus metrics for the backend can be found at `http://localhost:8001`.
 
 ### Running Locally (Development)
 
@@ -226,28 +225,35 @@ If you prefer to run services individually for easier development and debugging,
     ```bash
     docker run --name issues-tracker-db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=issues_db -p 5432:5432 -d postgres:15
     ```
+4.  **Create virtual environment:**
 
-4.  **Install Python Dependencies:**
+    ```bash
+    python -m venv .venv
+    source .venv/bin/activate # for bash for other shells or windows use appropriate source files
+    ```
+
+6.  **Install Python Dependencies:**
 
     ```bash
     pip install -r requirements.txt
     ```
 
-5.  **Run Database Migrations:**
+7.  **Run Database Migrations:**
 
     ```bash
     alembic upgrade head
     ```
 
-6.  **Start the Backend API:**
+8.  **Start the Backend API:**
 
     ```bash
-    uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+    fastapi dev main.py
     ```
 
     The backend API will be accessible at `http://localhost:8000`.
+    The prometheus API will be accessible at `http://localhost:8001`.
 
-7.  **Start the Daily Stats Worker (in a separate terminal):**
+10.  **Start the Daily Stats Worker (in a separate terminal):**
 
     ```bash
     python worker.py
@@ -299,15 +305,6 @@ The backend API is documented using OpenAPI (Swagger UI). Once the backend is ru
 
 The project includes comprehensive tests to ensure correctness and stability.
 
-- **Backend Tests:**
-  To run unit and integration tests for the FastAPI backend (from the `backend/` directory):
-
-  ```bash
-  pytest
-  ```
-
-  This will execute tests and report code coverage. The goal is to maintain \>= 80% backend coverage.
-
 - **Frontend E2E Tests:**
   End-to-end tests are written using Playwright. To run them (from the `frontend/` directory):
 
@@ -348,7 +345,3 @@ While the current implementation meets the requirements, here are some areas for
 - **Advanced Dashboard:** Add more complex charts and filtering options to the dashboard for deeper insights.
 - **Email Notifications:** Implement email notifications for status changes or new issue assignments.
 - **Full-text Search:** Add full-text search capabilities for issues.
-- **Internationalization (i18n):** Support multiple languages.
-- **Comprehensive Error Handling & UI Feedback:** Enhance error messages and provide more user-friendly feedback in the UI for various scenarios.
-- **Performance Optimizations:** Profile and optimize critical paths for improved performance under load.
-- **Security Hardening:** Implement more advanced security measures like rate limiting, stricter input validation, and content security policies.
