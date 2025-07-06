@@ -31,11 +31,29 @@ export const POST: RequestHandler = async ({ request, locals }) => {
     return json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const form = await request.formData();
+
+  // Extract fields manually
+  const title = form.get("title");
+  const description = form.get("description");
+  const severity = form.get("severity");
+  const status = form.get("status");
+  const file = form.get("file"); // could be `File` or `null`
+
+  // Reconstruct new FormData
+  const backendForm = new FormData();
+  if (title) backendForm.append("title", title);
+  if (description) backendForm.append("description", description);
+  if (severity) backendForm.append("severity", severity);
+  if (status) backendForm.append("status", status);
+  if (file instanceof File) backendForm.append("file", file);
+
+  // Send to backend using multipart/form-data
   const response = await post<FormData, TIssue, "">(
     Urls.createIssue,
-    await request.formData(),
+    backendForm,
     {
-      contentType: "application/x-www-form-urlencoded",
+      contentType: "multipart/form-data",
       Authorization: `Bearer ${token}`,
     },
   );

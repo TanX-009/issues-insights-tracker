@@ -244,10 +244,6 @@
     if (code === 401) goto("/logout");
   }
 
-  $effect(() => {
-    console.log(stats);
-  });
-
   onMount(() => {
     const prefersDark = window.matchMedia?.(
       "(prefers-color-scheme: dark)",
@@ -402,7 +398,7 @@
             </div>
           </div>
 
-          {#if data.user.role === "ADMIN"}
+          {#if data.user.role === "ADMIN" && stats.length > 0}
             <div
               class="flex items-center justify-between flex-wrap gap-0 bg-primaryContainer w-full rounded overflow-hidden"
             >
