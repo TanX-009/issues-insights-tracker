@@ -2,8 +2,12 @@ import { redirect } from "@sveltejs/kit";
 import type { Handle } from "@sveltejs/kit";
 import { base } from "$app/paths";
 
-const EXACT_PROTECTED_ROUTES = ["/"]; // strictly equal to
-const PREFIX_PROTECTED_ROUTES = ["/issues", "/logout", "/users"]; // startsWith
+const EXACT_PROTECTED_ROUTES = [base + "/"]; // strictly equal to
+const PREFIX_PROTECTED_ROUTES = [
+  base + "/issues",
+  base + "/logout",
+  base + "/users",
+]; // startsWith
 
 export const handle: Handle = async ({ event, resolve }) => {
   const token = event.cookies.get("auth_token");

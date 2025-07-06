@@ -52,7 +52,7 @@
       (data) => (users = data),
       (err) => (error = err.detail),
     );
-    if (status === 401) goto(base+"/logout");
+    if (status === 401) goto(base + "/logout");
   }
 
   async function saveUser(e: SubmitEvent) {
@@ -73,7 +73,7 @@
       (err) => (modalError = err.detail),
     );
 
-    if (status === 401) goto(base+"/logout");
+    if (status === 401) goto(base + "/logout");
   }
 
   async function deleteUser(e: SubmitEvent) {
@@ -94,7 +94,7 @@
       (err) => (modalError = err.detail),
     );
 
-    if (status === 401) goto(base+"/logout");
+    if (status === 401) goto(base + "/logout");
   }
 
   onMount(fetchUsers);
@@ -109,7 +109,7 @@
   <div class="flex justify-between items-center">
     <h1 class="text-2xl font-bold text-primary">Users</h1>
     <div class="flex gap-3">
-      <a class="button low" href="/">Dashboard</a>
+      <a class="button low" href={base + "/"}>Dashboard</a>
       <button class="button med" onclick={openAddModal}>Add User</button>
     </div>
   </div>

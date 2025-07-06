@@ -59,7 +59,7 @@
         (err) => (error = err?.detail || "Unknown error"),
       );
 
-      if (status === 401) goto(base+"/logout");
+      if (status === 401) goto(base + "/logout");
     } catch (e) {
       error = e instanceof Error ? e.message : "Unknown error";
     }
@@ -80,7 +80,7 @@
         (err) => (error = err?.detail || "Unknown error"),
       );
 
-      if (status === 401) goto(base+"/logout");
+      if (status === 401) goto(base + "/logout");
     } catch (e) {
       error = e instanceof Error ? e.message : "Unknown error";
     }
@@ -207,7 +207,7 @@
         },
         (err) => (modalError = err?.detail || "Unknown error!"),
       );
-      if (code === 401) goto(base+"/logout");
+      if (code === 401) goto(base + "/logout");
     } else {
       const res = await fetch(base + "/api/issues", {
         method: "PUT",
@@ -224,7 +224,7 @@
         },
         (err) => (modalError = err.detail),
       );
-      if (code === 401) goto(base+"/logout");
+      if (code === 401) goto(base + "/logout");
     }
   }
 
@@ -244,7 +244,7 @@
       },
       (err) => (modalError = err.detail),
     );
-    if (code === 401) goto(base+"/logout");
+    if (code === 401) goto(base + "/logout");
   }
 
   onMount(() => {
@@ -354,9 +354,9 @@
         {/if}
       </button>
       {#if data?.user?.role === "ADMIN"}
-        <a class="button low" href="/users">Users</a>
+        <a class="button low" href={base + "/users"}>Users</a>
       {/if}
-      <a class="button med" href="/logout">Logout</a>
+      <a class="button med" href={base + "/logout"}>Logout</a>
     </div>
   </div>
 
