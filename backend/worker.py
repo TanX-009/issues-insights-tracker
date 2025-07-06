@@ -25,7 +25,7 @@ def get_db_with_retries(retries=5, delay=3) -> Session:
     raise Exception("Failed to connect to the database after multiple retries.")
 
 
-@scheduler.scheduled_job("interval", minutes=1)
+@scheduler.scheduled_job("interval", minutes=30)
 def aggregate_daily_stats():
     db: Session = get_db_with_retries()
     try:
