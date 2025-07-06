@@ -131,7 +131,6 @@
     id = 0;
     title = "";
     description = "";
-    severity = "LOW";
     status = "OPEN";
     modalEl.open();
   };
@@ -340,9 +339,14 @@
                   <td class="px-4 py-2">{truncateText(issue.title, 20)}</td>
                   {#if data.user.role !== "REPORTER"}
                     <th class="px-4 py-2"
-                      >{truncateText(issue.reporter.email, 20)}</th
+                      >{truncateText(
+                        issue.reporter ? issue.reporter.email : "Deleted user",
+                        20,
+                      )}</th
                     >
-                    <th class="px-4 py-2">{issue.reporter.role}</th>
+                    <th class="px-4 py-2"
+                      >{issue.reporter ? issue.reporter.role : "NULL"}</th
+                    >
                   {/if}
                   <td
                     class="px-4 py-2 font-semibold {getSeverityColor(
@@ -401,34 +405,38 @@
       onsubmit={saveIssue}
       class="space-y-4 p-4 bg-surfaceContainer rounded"
     >
+      <label for="title">Title</label>
       <input
-        class="w-full p-2 rounded"
+        id="title"
+        class="w-full"
         type="text"
         placeholder="Title"
         bind:value={title}
         required
       />
+      <label for="description">Description</label>
       <textarea
-        class="w-full p-2 rounded"
+        id="description"
+        class="w-full mb-0"
         placeholder="Description"
         bind:value={description}
         required
       ></textarea>
       {#if data.user.role !== "REPORTER"}
-        <div class="flex gap-2">
-          <select class="w-1/2 p-2 rounded" bind:value={severity}>
-            {#each severityOrder as s, index (index)}<option value={s}
-                >{s}</option
+        <label for="severity">Severity</label>
+        <select id="severity" class="w-full p-2 rounded" bind:value={severity}>
+          {#each severityOrder as s, index (index)}<option value={s}>{s}</option
+            >{/each}
+        </select>
+
+        {#if modalMode === "EDIT"}
+          <label for="status">Status</label>
+          <select id="status" class="w-full p-2 rounded" bind:value={status}>
+            {#each statuses as s (s)}<option value={s}
+                >{s.replace("_", " ")}</option
               >{/each}
           </select>
-          {#if modalMode === "EDIT"}
-            <select class="w-1/2 p-2 rounded" bind:value={status}>
-              {#each statuses as s (s)}<option value={s}
-                  >{s.replace("_", " ")}</option
-                >{/each}
-            </select>
-          {/if}
-        </div>
+        {/if}
       {/if}
       <div class="flex justify-end gap-2">
         {#if data.user.role === "ADMIN" && modalMode !== "CREATE"}

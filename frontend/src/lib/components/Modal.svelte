@@ -2,6 +2,7 @@
   let { header, children, onclose = () => {} } = $props();
 
   let dialog: HTMLDialogElement; // HTMLDialogElement
+  let container: HTMLDivElement; // HTMLDialogElement
 
   export const close = () => {
     dialog.close();
@@ -19,11 +20,17 @@
     dialog.close();
   }}
   onclick={(e) => {
-    if (e.target === dialog) dialog.close();
+    if (e.target === dialog || e.target === container) {
+      onclose();
+      dialog.close();
+    }
   }}
-  class="mx-auto p-3 w-full h-full bg-[#00000088] text-onSurface"
+  class="p-3 w-full h-full mx-auto bg-transparent backdrop:bg-[#00000088] text-onSurface"
 >
-  <div class="w-full h-full flex justify-center items-center">
+  <div
+    bind:this={container}
+    class="w-full h-full flex justify-center items-center"
+  >
     <div
       class="p-3 max-h-full overflow-y-auto border-none bg-surfaceContainer rounded"
     >

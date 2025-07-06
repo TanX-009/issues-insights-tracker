@@ -183,8 +183,13 @@
       </div>
     </form>
   {:else}
-    <form onsubmit={saveUser} class="p-4 space-y-4 bg-surfaceContainer rounded">
+    <form
+      onsubmit={saveUser}
+      class="p-4 space-y-2 max-w-md bg-surfaceContainer rounded"
+    >
+      <label for="email">Email</label>
       <input
+        id="email"
         type="email"
         placeholder="Email"
         bind:value={email}
@@ -192,7 +197,9 @@
         required
       />
 
+      <label for="password">Password</label>
       <input
+        id="password"
         type="password"
         placeholder="Password"
         bind:value={password}
@@ -200,21 +207,18 @@
         required
       />
 
-      <select bind:value={role} class="w-full p-2 rounded">
+      <label for="role">Role</label>
+      <select id="role" bind:value={role} class="w-full">
         {#each roles as r (r)}
           <option value={r}>{r}</option>
         {/each}
       </select>
 
       <div class="flex justify-end gap-2">
-        <button type="submit" class="px-4 py-2 rounded primary">
+        <button type="submit" class="">
           {modalMode === "EDIT" ? "Update" : "Add"}
         </button>
-        <button
-          type="button"
-          class="px-4 py-2 rounded low"
-          onclick={() => modalEl.close()}
-        >
+        <button type="button" class="low" onclick={() => modalEl.close()}>
           Cancel
         </button>
       </div>

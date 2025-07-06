@@ -7,7 +7,7 @@ interface TIssue {
   id: number;
   status: "OPEN" | "TRIAGED" | "IN_PROGRESS" | "DONE";
   file_path: string | null;
-  reporter: TUser;
+  reporter: TUser | null;
 }
 
 export type { TIssue };
