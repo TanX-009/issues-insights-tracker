@@ -257,11 +257,11 @@
     if (!browser) return;
     fetchIssues();
 
-    if (data.user.role === "ADMIN") {
+    if (data?.user?.role === "ADMIN") {
       fetchStats();
     }
 
-    if (["REPORTER", "MAINTAINER", "ADMIN"].includes(data.user.role)) {
+    if (["REPORTER", "MAINTAINER", "ADMIN"].includes(data?.user?.role)) {
       if (data.token) {
         eventSource = new EventSource(
           `${env.PUBLIC_SSE_URL}${Urls.issuesEvent}?token=${data.token}`,
@@ -333,7 +333,7 @@
           <span
             class="bg-secondaryContainer text-secondary rounded-l px-3 py-1.5"
           >
-            {data.user.role}
+            {data?.user?.role}
           </span>
           <span
             class="bg-surfaceContainerHigh text-secondary rounded-r px-3 py-1.5"
@@ -352,7 +352,7 @@
           <Moon />
         {/if}
       </button>
-      {#if data.user.role === "ADMIN"}
+      {#if data?.user?.role === "ADMIN"}
         <a class="button low" href="/users">Users</a>
       {/if}
       <a class="button med" href="/logout">Logout</a>
@@ -400,7 +400,7 @@
             </div>
           </div>
 
-          {#if data.user.role === "ADMIN" && stats.length > 0}
+          {#if data?.user?.role === "ADMIN" && stats.length > 0}
             <div
               class="flex items-center justify-between flex-wrap gap-0 bg-primaryContainer w-full rounded overflow-hidden"
             >
@@ -436,7 +436,7 @@
               <tr>
                 <th class="px-4 py-2">ID</th>
                 <th class="px-4 py-2">Title</th>
-                {#if data.user.role !== "REPORTER"}
+                {#if data?.user?.role !== "REPORTER"}
                   <th class="px-4 py-2">User</th>
                   <th class="px-4 py-2">Role</th>
                 {/if}
@@ -455,7 +455,7 @@
                 >
                   <td class="px-4 py-2">{issue.id}</td>
                   <td class="px-4 py-2">{truncateText(issue.title, 20)}</td>
-                  {#if data.user.role !== "REPORTER"}
+                  {#if data?.user?.role !== "REPORTER"}
                     <th class="px-4 py-2"
                       >{truncateText(
                         issue.reporter ? issue.reporter.email : "Deleted user",
@@ -541,7 +541,7 @@
           bind:value={description}
           required
         ></textarea>
-        {#if data.user.role !== "REPORTER"}
+        {#if data?.user?.role !== "REPORTER"}
           {#if modalMode === "EDIT"}
             <label for="severity">Severity</label>
             <select
@@ -594,7 +594,7 @@
           </div>
         {/if}
         <div class="flex justify-end gap-2">
-          {#if data.user.role === "ADMIN" && modalMode !== "CREATE"}
+          {#if data?.user?.role === "ADMIN" && modalMode !== "CREATE"}
             <button class="err" onclick={openDeleteModal}>Delete</button>
           {/if}
           <button class="" type="submit">
