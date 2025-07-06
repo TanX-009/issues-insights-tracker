@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy, onMount } from "svelte";
+  import { onMount } from "svelte";
   import { Chart, registerables } from "chart.js";
   import { goto } from "$app/navigation";
   import { browser } from "$app/environment";
@@ -63,37 +63,9 @@
       CRITICAL: 0,
     };
     issues.forEach((issue) => {
-      if (issue.status === "OPEN") grouped[issue.severity]++;
+      grouped[issue.severity]++;
     });
     return severityOrder.map((s) => grouped[s]);
-  };
-
-  const renderChart = () => {
-    const counts = groupOpenIssuesBySeverity(issues);
-    if (canvasEl) {
-      if (chart) chart.destroy();
-      chart = new Chart(canvasEl, {
-        type: "bar",
-        data: {
-          labels: severityOrder,
-          datasets: [
-            {
-              label: "Open Issues",
-              data: counts,
-              backgroundColor: ["#2b7fff", "#f0b100", "#ff6900", "#fb2c36"],
-              borderRadius: 6,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { display: false } },
-          scales: {
-            y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 } },
-          },
-        },
-      });
-    }
   };
 
   const getSeverityColor = (severity: TIssue["severity"]) =>
@@ -131,6 +103,7 @@
     id = 0;
     title = "";
     description = "";
+    severity = severity;
     status = "OPEN";
     modalEl.open();
   };
@@ -163,7 +136,7 @@
   async function saveIssue(e: SubmitEvent) {
     e.preventDefault();
     const res = await fetch("/api/issues", {
-      method: id ? "PUT" : "POST",
+      method: id !== 0 ? "PUT" : "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, title, description, severity, status }),
     });
@@ -220,20 +193,42 @@
         };
       }
     }
-  });
 
-  onDestroy(() => {
-    chart?.destroy();
-  });
-
-  $effect(() => {
-    if (canvasEl && issues.length > 0 && !chart) renderChart();
+    return () => {
+      chart?.destroy();
+    };
   });
 
   $effect(() => {
-    if (chart && issues) {
-      chart.data.datasets[0].data = groupOpenIssuesBySeverity(issues);
+    if (!canvasEl || issues.length === 0) return;
+
+    const data = groupOpenIssuesBySeverity(issues);
+
+    if (chart) {
+      chart.data.datasets[0].data = data;
       chart.update();
+    } else {
+      chart = new Chart(canvasEl, {
+        type: "bar",
+        data: {
+          labels: severityOrder,
+          datasets: [
+            {
+              label: "Open Issues",
+              data,
+              backgroundColor: ["#2b7fff", "#f0b100", "#ff6900", "#fb2c36"],
+              borderRadius: 6,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 } },
+          },
+        },
+      });
     }
   });
 </script>
@@ -423,13 +418,17 @@
         required
       ></textarea>
       {#if data.user.role !== "REPORTER"}
-        <label for="severity">Severity</label>
-        <select id="severity" class="w-full p-2 rounded" bind:value={severity}>
-          {#each severityOrder as s, index (index)}<option value={s}>{s}</option
-            >{/each}
-        </select>
-
         {#if modalMode === "EDIT"}
+          <label for="severity">Severity</label>
+          <select
+            id="severity"
+            class="w-full p-2 rounded"
+            bind:value={severity}
+          >
+            {#each severityOrder as s, index (index)}<option value={s}
+                >{s}</option
+              >{/each}
+          </select>
           <label for="status">Status</label>
           <select id="status" class="w-full p-2 rounded" bind:value={status}>
             {#each statuses as s (s)}<option value={s}
