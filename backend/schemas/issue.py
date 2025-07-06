@@ -41,7 +41,7 @@ class IssueOut(IssueBase):
     status: Status
     severity: Severity = Severity.LOW
     file_path: Optional[str]
-    reporter: UserOut
+    reporter: Optional[UserOut]
 
     class Config:
         from_attributes = True

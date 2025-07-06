@@ -18,7 +18,9 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     password_hash = Column(String, nullable=False)
     role = Column(Enum(UserRole), default=UserRole.REPORTER, nullable=False)
-    issues_reported = relationship("Issue", back_populates="reporter")
+    issues_reported = relationship(
+        "Issue", back_populates="reporter", passive_deletes=True
+    )
 
 
 class UserOut(BaseModel):
