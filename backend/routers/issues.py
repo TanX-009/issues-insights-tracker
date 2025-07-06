@@ -3,6 +3,7 @@ from uuid import uuid4
 from fastapi import (
     APIRouter,
     Depends,
+    Query,
     UploadFile,
     File,
     Form,
@@ -12,10 +13,11 @@ from fastapi import (
 from sqlalchemy.orm import Session, joinedload
 from starlette.responses import StreamingResponse
 from monitoring.metrics import ISSUES_CREATED, REQUEST_TIME
+from prometheus_async.aio import time as async_time_decorator
 from db import get_db
 from models.issue import Issue, Severity
-from models.user import UserRole
-from dependencies import get_current_user, require_role
+from models.user import User, UserRole
+from dependencies import get_current_user, require_role, require_sse_user
 from schemas.issue import IssueUpdate, IssueOut
 import os
 import shutil
@@ -33,35 +35,51 @@ connected_clients: List[asyncio.Queue] = []
 
 
 @router.get("/events")
-async def sse_subscribe():
-    """
-    Endpoint for clients to subscribe to Server-Sent Events (SSE).
-    Clients will receive updates when new issues are created.
-    """
+async def sse_subscribe(
+    token: str = Query(..., description="Authentication token"),
+    current_user: User = Depends(require_sse_user),  # Inject the dependency here
+):
     client_queue = asyncio.Queue()
     connected_clients.append(client_queue)
-    logger.info(f"New SSE client connected. Total clients: {len(connected_clients)}")
+    logger.info(
+        {
+            "event": "sse_client_connected",
+            "message": "New SSE client connected.",
+            "total_clients": len(connected_clients),
+            "user_id": current_user.id,  # Log user ID for traceability
+        }
+    )
 
     async def event_generator():
         try:
             while True:
-                # Wait for a new message to be put into the queue
                 message = await client_queue.get()
-                # Format the message as an SSE event
                 yield f"data: {json.dumps(message)}\n\n"
         except asyncio.CancelledError:
-            # This exception is raised when the client disconnects
-            logger.info("SSE client disconnected.")
+            logger.info(
+                {
+                    "event": "sse_client_disconnected",
+                    "message": "SSE client disconnected.",
+                    "user_id": current_user.id,
+                }
+            )
         finally:
-            # Ensure the client's queue is removed when they disconnect
-            connected_clients.remove(client_queue)
-            logger.info(f"SSE client removed. Total clients: {len(connected_clients)}")
+            if client_queue in connected_clients:
+                connected_clients.remove(client_queue)
+            logger.info(
+                {
+                    "event": "sse_client_removed",
+                    "message": "SSE client removed.",
+                    "total_clients": len(connected_clients),
+                    "user_id": current_user.id,
+                }
+            )
 
-    # Return a StreamingResponse with the event_generator
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
 @router.post("/", response_model=IssueOut)
+@async_time_decorator(REQUEST_TIME)
 async def create_issue(
     title: str = Form(...),
     description: str = Form(...),
@@ -113,7 +131,6 @@ async def create_issue(
                 "file_uploaded": file_uploaded,
             }
         )
-        ISSUES_CREATED.inc()
 
         # --- SSE: Notify connected clients ---
         for client_queue in connected_clients:
@@ -122,6 +139,8 @@ async def create_issue(
             except Exception as e:
                 logger.error(f"Failed to send SSE message to client: {e}")
         # --- End SSE notification ---
+
+        ISSUES_CREATED.inc()
 
         return issue
 
