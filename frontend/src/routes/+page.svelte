@@ -13,10 +13,14 @@
   import Urls from "$lib/api/urls";
   import Markdown from "svelte-exmarkdown";
   import { PUBLIC_API_URL } from "$env/static/public";
+  import Sun from "$lib/components/icons/Sun.svelte";
+  import Moon from "$lib/components/icons/Moon.svelte";
 
   Chart.register(...registerables);
 
   const { data } = $props<{ data: { user: TUser; token: string } }>();
+
+  let theme: "dark" | "light" = $state("light");
 
   let eventSource: EventSource | null = null;
   let issues: TIssue[] = $state([]);
@@ -127,6 +131,16 @@
 
   let file: File | null = null;
 
+  function applyTheme(t: "light" | "dark") {
+    const root = document.documentElement;
+    root.setAttribute("data-theme", t);
+    theme = t;
+  }
+
+  function toggleTheme() {
+    applyTheme(theme === "dark" ? "light" : "dark");
+  }
+
   const openCreateModal = () => {
     modalMode = "CREATE";
     id = 0;
@@ -235,6 +249,13 @@
   });
 
   onMount(() => {
+    const prefersDark = window.matchMedia?.(
+      "(prefers-color-scheme: dark)",
+    ).matches;
+    applyTheme(prefersDark ? "dark" : "light");
+  });
+
+  onMount(() => {
     if (!browser) return;
     fetchIssues();
 
@@ -321,9 +342,20 @@
             >{data.user.email}</span
           >
         </div>
-        {#if data.user.role === "ADMIN"}
-          <a class="button low" href="/users">Users</a>
+      {/if}
+      <button
+        class="low flex items-center justify-center gap-1 px-2.5 h-full"
+        onclick={toggleTheme}
+        aria-label={theme === "light" ? "Light" : "Dark"}
+      >
+        {#if theme === "light"}
+          <Sun />
+        {:else}
+          <Moon />
         {/if}
+      </button>
+      {#if data.user.role === "ADMIN"}
+        <a class="button low" href="/users">Users</a>
       {/if}
       <a class="button med" href="/logout">Logout</a>
     </div>
