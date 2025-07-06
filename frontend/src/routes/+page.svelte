@@ -11,6 +11,7 @@
   import { env } from "$env/dynamic/public";
   import Urls from "$lib/api/urls";
   import Markdown from "svelte-exmarkdown";
+  import { PUBLIC_API_URL } from "$env/static/public";
 
   Chart.register(...registerables);
 
@@ -47,7 +48,7 @@
       const status = handleResponse<TIssue[]>(
         response,
         (res) => (issues = res),
-        (err) => (error = err.detail),
+        (err) => (error = err?.detail || "Unknown error"),
       );
 
       if (status === 401) goto("/logout");
@@ -98,6 +99,9 @@
   let description: TIssue["description"] = $state("");
   let severity: TIssue["severity"] = $state("LOW");
   let status: TIssue["status"] = $state("OPEN");
+  let file_path: TIssue["file_path"] = $state("");
+
+  let file: File | null = null;
 
   const openCreateModal = () => {
     modalMode = "CREATE";
@@ -116,6 +120,7 @@
     description = issue.description;
     severity = issue.severity;
     status = issue.status;
+    file_path = issue.file_path;
     modalEl.open();
   };
 
@@ -130,27 +135,57 @@
     description = "";
     severity = "LOW";
     status = "OPEN";
+    file = null;
+    file_path = "";
 
     modalError = "";
   };
 
   async function saveIssue(e: SubmitEvent) {
     e.preventDefault();
-    const res = await fetch("/api/issues", {
-      method: id !== 0 ? "PUT" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, title, description, severity, status }),
-    });
-    const body = await res.json();
-    const code = handleResponse<TIssue>(
-      body,
-      () => {
-        modalEl.close();
-        fetchIssues();
-      },
-      (err) => (modalError = err.detail),
-    );
-    if (code === 401) goto("/logout");
+
+    if (modalMode === "CREATE") {
+      const formData = new FormData();
+      formData.append("title", title);
+      formData.append("description", description);
+      formData.append("severity", severity);
+      formData.append("status", status);
+      if (file) formData.append("file", file);
+
+      const res = await fetch("/api/issues", {
+        method: "POST",
+        body: formData,
+      });
+
+      const body = await res.json();
+      const code = handleResponse<TIssue>(
+        body,
+        () => {
+          modalEl.close();
+          fetchIssues();
+        },
+        (err) => (modalError = err?.detail || "Unknown error!"),
+      );
+      if (code === 401) goto("/logout");
+    } else {
+      // EDIT: no file upload
+      const res = await fetch("/api/issues", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, title, description, severity, status }),
+      });
+
+      const body = await res.json();
+      const code = handleResponse<TIssue>(
+        body,
+        () => {
+          modalEl.close();
+          fetchIssues();
+        },
+        (err) => (modalError = err.detail),
+      );
+      if (code === 401) goto("/logout");
+    }
   }
 
   async function deleteIssue(e: SubmitEvent) {
@@ -440,6 +475,37 @@
             </select>
           {/if}
         {/if}
+        {#if modalMode === "CREATE"}
+          <label for="file">Attach File</label>
+          <input
+            id="file"
+            class="w-full"
+            type="file"
+            accept="*/*"
+            onchange={(e) => {
+              const target = e.target as HTMLInputElement;
+              if (target?.files?.length) {
+                file = target.files[0];
+              }
+            }}
+          />
+        {:else if modalMode === "EDIT" && file_path}
+          <div
+            class="flex justify-between w-full bg-secondary text-onSecondary rounded overflow-hidden"
+          >
+            <span class="py-0.5 px-3 overflow-hidden"
+              >{file_path.replace("uploads/", "")}</span
+            >
+            <a
+              href={`${PUBLIC_API_URL}/${file_path}`}
+              target="_blank"
+              download
+              class="py-0.5 px-3 bg-primaryContainer text-primary h-full"
+            >
+              Download
+            </a>
+          </div>
+        {/if}
         <div class="flex justify-end gap-2">
           {#if data.user.role === "ADMIN" && modalMode !== "CREATE"}
             <button class="err" onclick={openDeleteModal}>Delete</button>
@@ -450,6 +516,7 @@
         </div>
       </form>
       <div class="prose prose-neutral dark:prose-invert max-w-xl w-full">
+        <h3>Description markdown preview</h3>
         <Markdown md={description} />
       </div>
     </div>

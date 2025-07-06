@@ -20,7 +20,7 @@ from schemas.issue import IssueUpdate, IssueOut
 import os
 import shutil
 import json
-from typing import List
+from typing import List, Optional
 from core.logging import logger
 
 router = APIRouter()
@@ -65,7 +65,7 @@ async def sse_subscribe():
 async def create_issue(
     title: str = Form(...),
     description: str = Form(...),
-    file: UploadFile = File(None),
+    file: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     user=Depends(require_role(["REPORTER", "MAINTAINER", "ADMIN"])),
 ):
@@ -74,24 +74,24 @@ async def create_issue(
     """
     with REQUEST_TIME.time():
         file_path = None
+        file_uploaded = False
 
         if file and file.filename:
             os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-            # Get file extension safely
-            _, ext = os.path.splitext(file.filename)
+            name, ext = os.path.splitext(file.filename)
             safe_ext = ext if ext else ""
-
-            # Create UUID filename
-            uuid_filename = f"{uuid4().hex}{safe_ext}"
+            uuid_filename = f"{name}_{uuid4().hex}{safe_ext}"
             file_path = os.path.join(UPLOAD_DIR, uuid_filename)
 
             try:
                 with open(file_path, "wb") as buffer:
                     shutil.copyfileobj(file.file, buffer)
+                file_uploaded = True
             except Exception as e:
                 logger.error(f"Failed to save file: {e}")
                 file_path = None
+            finally:
+                await file.close()
 
         issue = Issue(
             title=title,
@@ -110,7 +110,7 @@ async def create_issue(
                 "user_id": user.id,
                 "issue_id": issue.id,
                 "severity": "LOW",
-                "file_uploaded": bool(file),
+                "file_uploaded": file_uploaded,
             }
         )
         ISSUES_CREATED.inc()
@@ -118,7 +118,6 @@ async def create_issue(
         # --- SSE: Notify connected clients ---
         for client_queue in connected_clients:
             try:
-                # Put the issue data into each client's queue
                 await client_queue.put(f"Issue created: {issue.title} (id={issue.id})")
             except Exception as e:
                 logger.error(f"Failed to send SSE message to client: {e}")

@@ -30,19 +30,15 @@ export const GET: RequestHandler = async ({ locals }) => {
 };
 
 export const POST: RequestHandler = async ({ request, locals }) => {
-  const { title, description } = await request.json();
   const token = locals.token;
 
   if (!token) {
     return json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const response = await post<TCreateIssueRequest, TIssue, "">(
+  const response = await post<FormData, TIssue, "">(
     Urls.createIssue,
-    {
-      title,
-      description,
-    },
+    await request.formData(),
     {
       contentType: "application/x-www-form-urlencoded",
       Authorization: `Bearer ${token}`,

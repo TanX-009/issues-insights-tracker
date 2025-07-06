@@ -12,6 +12,10 @@
     @apply p-2 rounded bg-surfaceContainerHigh text-onSurface;
   }
 
+  textarea {
+    @apply h-32;
+  }
+
   button,
   .button {
     @apply py-1.5 px-4 max-w-fit rounded bg-primary text-onPrimary cursor-pointer;
