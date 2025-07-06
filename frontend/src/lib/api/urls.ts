@@ -12,6 +12,8 @@ const Urls = {
   createUser: "/users/",
   updateUser: "/users/$$user_id$$",
   deleteUser: "/users/$$user_id$$",
+
+  getDailyStats: "/stats/daily",
 } as const;
 
 export default Urls;

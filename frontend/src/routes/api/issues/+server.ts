@@ -3,11 +3,6 @@ import { delete_, get, post, put } from "$lib/api/config";
 import Urls from "$lib/api/urls";
 import type { TIssue } from "$lib/types/issue";
 
-interface TCreateIssueRequest {
-  title: string;
-  description: string;
-}
-
 interface TUpdateIssueRequest {
   title: string;
   description: string;

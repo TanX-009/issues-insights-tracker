@@ -5,6 +5,7 @@
   import { browser } from "$app/environment";
   import Modal from "$lib/components/Modal.svelte";
   import type { TIssue } from "$lib/types/issue";
+  import type { TStat } from "$lib/types/stat";
   import handleResponse from "$lib/utils/response";
   import type { TUser } from "$lib/types/user";
   import { truncateText } from "$lib/utils/string";
@@ -22,6 +23,8 @@
   let error = $state("");
   let chart: Chart | null = null;
   let canvasEl: HTMLCanvasElement | null = $state(null);
+
+  let stats: TStat[] = $state([]);
 
   const severityOrder: TIssue["severity"][] = [
     "LOW",
@@ -48,6 +51,27 @@
       const status = handleResponse<TIssue[]>(
         response,
         (res) => (issues = res),
+        (err) => (error = err?.detail || "Unknown error"),
+      );
+
+      if (status === 401) goto("/logout");
+    } catch (e) {
+      error = e instanceof Error ? e.message : "Unknown error";
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const res = await fetch("/api/stats");
+      if (!res.ok) {
+        error = `Failed to fetch issues: ${res.status} ${res.statusText}`;
+        return;
+      }
+
+      const response = await res.json();
+      const status = handleResponse<TStat[]>(
+        response,
+        (res) => (stats = res),
         (err) => (error = err?.detail || "Unknown error"),
       );
 
@@ -168,7 +192,6 @@
       );
       if (code === 401) goto("/logout");
     } else {
-      // EDIT: no file upload
       const res = await fetch("/api/issues", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -207,11 +230,19 @@
     if (code === 401) goto("/logout");
   }
 
+  $effect(() => {
+    console.log(stats);
+  });
+
   onMount(() => {
     if (!browser) return;
     fetchIssues();
 
-    if (["MAINTAINER", "ADMIN"].includes(data.user.role)) {
+    if (data.user.role === "ADMIN") {
+      fetchStats();
+    }
+
+    if (["REPORTER", "MAINTAINER", "ADMIN"].includes(data.user.role)) {
       if (data.token) {
         eventSource = new EventSource(
           `${env.PUBLIC_SSE_URL}${Urls.issuesEvent}?token=${data.token}`,
@@ -338,6 +369,31 @@
               </span>
             </div>
           </div>
+
+          {#if data.user.role === "ADMIN"}
+            <div
+              class="flex items-center justify-between flex-wrap gap-0 bg-primaryContainer w-full rounded overflow-hidden"
+            >
+              <h3
+                class="text-xl font-bold px-2 py-1 flex items-center shadow text-primary"
+              >
+                Daily stats
+              </h3>
+
+              <div class="flex flex-wrap">
+                {#each stats as stat (stat.id)}
+                  <div
+                    class={` px-2 py-1 flex justify-between items-center gap-4 shadow ${getStatusColor(stat.status)}`}
+                  >
+                    <div class="text-sm font-medium">
+                      {stat.status.replace("_", " ")}
+                    </div>
+                    <div class="text-xl font-bold">{stat.count}</div>
+                  </div>
+                {/each}
+              </div>
+            </div>
+          {/if}
         </div>
 
         <div
@@ -389,7 +445,7 @@
                   </td>
                   <td class="px-4 py-2">
                     <span
-                      class={`inline-block px-2 py-1 rounded text-xs font-medium ${getStatusColor(issue.status)}`}
+                      class={`inline-block px-2 py-1 rounded text-xs text-nowrap font-medium ${getStatusColor(issue.status)}`}
                     >
                       {issue.status.replace("_", " ")}
                     </span>

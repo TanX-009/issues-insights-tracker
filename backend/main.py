@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from monitoring.metrics import start_metrics_server
-from routers import auth, issues, user
+from routers import auth, issues, stats, user
 from db import Base, engine
 
 # Create all tables (in production you'd use Alembic instead)
@@ -28,6 +28,10 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(issues.router, prefix="/api/issues", tags=["Issues"])
 app.include_router(user.router, prefix="/users", tags=["Users"])
+app.include_router(stats.router, prefix="/stats", tags=["Stats"])
+
+# Start Prometheus server
+start_metrics_server()
 
 
 @asynccontextmanager
