@@ -154,8 +154,8 @@ This is the recommended way to run the entire application stack.
     DEFAULT_ADMIN_PASSWORD=adminpassword
     ```
 
-    > [!NOTE]
-    > Replace placeholders with strong, unique values, especially for `JWT_SECRET`.
+> [!NOTE]
+> Replace placeholders with strong, unique values, especially for `JWT_SECRET`.
 
 3.  **Create Frontend Production Environment File:**
     Navigate to the `frontend/` directory and create a file named `.env.production`. Populate it with the following environment variables:
@@ -164,11 +164,14 @@ This is the recommended way to run the entire application stack.
     # frontend/.env.production
     PUBLIC_API_URL=http://backend:8000
     PUBLIC_SSE_URL=http://localhost:8000
+    PROTOCOL_HEADER=x-forwarded-proto
+    HOST_HEADER=x-forwarded-host
+    ORIGIN=http://localhost:3000
     SECURE_COOKIES=false # Set to true for HTTPS in production
     ```
 
-    > [!WARNING]
-    > Important for `PUBLIC_API_URL`: If you are running Docker Compose and want to access the application via `localhost:3000` from your host machine for development or testing, you need to set `PUBLIC_API_URL=http://backend:8000` and `PUBLIC_SSE_URL=http://localhost:8000` in `frontend/.env.production` .
+> [!WARNING]
+> Important for `PUBLIC_API_URL`: If you are running Docker Compose and want to access the application via `localhost:3000` from your host machine for development or testing, you need to set `PUBLIC_API_URL=http://backend:8000` and `PUBLIC_SSE_URL=http://localhost:8000` in `frontend/.env.production` .
 
 4.  **Build and Run with Docker Compose:**
     From the root directory of the project, execute:
@@ -256,7 +259,6 @@ If you prefer to run services individually for easier development and debugging,
 
 8.  **Start the Daily Stats Worker (in a separate terminal):**
 
-
     ```bash
     python worker.py
     ```
@@ -322,7 +324,7 @@ The project includes comprehensive tests to ensure correctness and stability.
 ## Observability
 
 - **Structured Logging:** The backend uses `loguru` for structured logging, making it easier to parse and analyze logs.
-- **Prometheus Metrics:** A basic Prometheus metric is exposed for the `create issue` API endpoint. You can access these metrics at `http://localhost:8001/metrics` when running with Docker Compose.
+- **Prometheus Metrics:** A basic Prometheus metric is exposed for the `create issue` API endpoint. You can access these metrics at `http://localhost:8001` when running with Docker Compose.
 
 ---
 
@@ -343,7 +345,6 @@ While the current implementation meets the requirements, here are some areas for
 
 - **S3-compatible Storage:** Integrate with S3 or a similar cloud storage service for file uploads instead of local disk storage for better scalability and resilience.
 - **Enhanced Real-time:** Explore WebSockets for more advanced real-time features, such as collaborative editing or live chat on issues.
-- **More Robust Authentication:** Implement OAuth2 (PKCE) flow with a dedicated OAuth provider for enhanced security and features.
 - **Advanced Dashboard:** Add more complex charts and filtering options to the dashboard for deeper insights.
 - **Email Notifications:** Implement email notifications for status changes or new issue assignments.
 - **Full-text Search:** Add full-text search capabilities for issues.
