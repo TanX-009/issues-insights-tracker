@@ -4,6 +4,7 @@ test("Admin creates a user, user creates issue, admin triages", async ({
   page,
 }) => {
   // Login as admin
+  await page.goto("/logout");
   await page.goto("/login");
   await page.getByPlaceholder("Email").fill("admin@email.com");
   await page.getByPlaceholder("Password").fill("admin");
@@ -16,10 +17,12 @@ test("Admin creates a user, user creates issue, admin triages", async ({
 
   // Delete test user if already exists
   const userRow = page.locator("tr", { hasText: "test@email.com" });
-  const deleteButton = userRow.getByRole("button", { name: "Delete" });
-  await deleteButton.click(); // open delete confirmation modal
-  const dialog = page.locator("dialog");
-  await dialog.getByRole("button", { name: "Delete" }).click(); // confirm delete
+  if ((await userRow.count()) > 0) {
+    const deleteButton = userRow.getByRole("button", { name: "Delete" });
+    await deleteButton.click(); // open delete confirmation modal
+    const dialog = page.locator("dialog");
+    await dialog.getByRole("button", { name: "Delete" }).click(); // confirm delete
+  }
   // await expect(userRow).toHaveCount(userRows - 1); // ensure it's gone
 
   // Add new user
