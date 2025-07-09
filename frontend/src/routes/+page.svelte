@@ -16,6 +16,7 @@
   import Sun from "$lib/components/icons/Sun.svelte";
   import Moon from "$lib/components/icons/Moon.svelte";
   import { base } from "$app/paths";
+  import { isToday, isYesterday } from "$lib/utils/date";
 
   Chart.register(...registerables);
 
@@ -29,7 +30,7 @@
   let chart: Chart | null = null;
   let canvasEl: HTMLCanvasElement | null = $state(null);
 
-  let stats: TStat[] = $state([]);
+  let groupedStats: { date: string; stats: TStat[] }[] = $state([]);
 
   const severityOrder: TIssue["severity"][] = [
     "LOW",
@@ -43,6 +44,24 @@
     "DONE",
     "TRIAGED",
   ];
+
+  const groupDailyStats = (stats: TStat[]) => {
+    const grouped = stats.reduce((acc: Record<string, TStat[]>, stat) => {
+      const day = stat.date;
+      if (!acc[day]) {
+        acc[day] = [];
+      }
+      acc[day].push(stat);
+      return acc;
+    }, {});
+
+    groupedStats = Object.keys(grouped)
+      .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
+      .map((date) => ({
+        date: date,
+        stats: grouped[date], // now correctly typed
+      }));
+  };
 
   const fetchIssues = async () => {
     try {
@@ -76,7 +95,9 @@
       const response = await res.json();
       const status = handleResponse<TStat[]>(
         response,
-        (res) => (stats = res),
+        (res) => {
+          groupDailyStats(res);
+        },
         (err) => (error = err?.detail || "Unknown error"),
       );
 
@@ -288,6 +309,10 @@
   });
 
   $effect(() => {
+    console.log(groupedStats);
+  });
+
+  $effect(() => {
     if (!canvasEl || issues.length === 0) return;
 
     const data = groupOpenIssuesBySeverity(issues);
@@ -401,28 +426,48 @@
             </div>
           </div>
 
-          {#if data?.user?.role === "ADMIN" && stats.length > 0}
-            <div
-              class="flex items-center justify-between flex-wrap gap-0 bg-primaryContainer w-full rounded overflow-hidden"
-            >
-              <h3
-                class="text-xl font-bold px-2 py-1 flex items-center shadow text-primary"
-              >
-                Daily stats
-              </h3>
+          {#if data?.user?.role === "ADMIN"}
+            <div class="flex flex-col gap-2 p-4">
+              <h2 class="text-3xl font-bold text-primary mb-4">
+                Overall Daily Issue Statistics
+              </h2>
 
-              <div class="flex flex-wrap">
-                {#each stats as stat (stat.id)}
-                  <div
-                    class={` px-2 py-1 flex justify-between items-center gap-4 shadow ${getStatusColor(stat.status)}`}
-                  >
-                    <div class="text-sm font-medium">
-                      {stat.status.replace("_", " ")}
+              {#if groupedStats.length === 0}
+                <p class="text-tertiary">No daily statistics available.</p>
+              {:else}
+                {#each groupedStats as dayGroup (dayGroup.date)}
+                  {#if isToday(dayGroup.date) || isYesterday(dayGroup.date)}
+                    <div
+                      class="flex items-center justify-between flex-wrap gap-0 bg-primaryContainer w-full rounded overflow-hidden"
+                    >
+                      <h3
+                        class="text-xl font-bold px-2 py-1 flex items-center shadow text-primary"
+                      >
+                        {#if isToday(dayGroup.date)}
+                          Today
+                        {:else if isYesterday(dayGroup.date)}
+                          Yesterday
+                        {:else}
+                          {dayGroup.date}
+                        {/if}
+                      </h3>
+
+                      <div class="flex flex-wrap">
+                        {#each dayGroup.stats as stat (stat.id)}
+                          <div
+                            class={` px-2 py-1 flex justify-between items-center gap-4 shadow ${getStatusColor(stat.status)}`}
+                          >
+                            <div class="text-sm font-medium">
+                              {stat.status.replace("_", " ")}
+                            </div>
+                            <div class="text-xl font-bold">{stat.count}</div>
+                          </div>
+                        {/each}
+                      </div>
                     </div>
-                    <div class="text-xl font-bold">{stat.count}</div>
-                  </div>
+                  {/if}
                 {/each}
-              </div>
+              {/if}
             </div>
           {/if}
         </div>
